@@ -1,0 +1,7 @@
+package com.gtasterix.E_Commerce.exception;
+
+public class UserAlreadyExistsException extends RuntimeException {
+    public UserAlreadyExistsException(String s) {
+        super(s);
+    }
+}
