@@ -24,13 +24,13 @@ public class Product {
     @Column(nullable = false)
     private Integer stockQuantity;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoryID", nullable = false)
     private Category category;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vendorID", nullable = false)
-    private User vendor;
+    private Vendor vendor;
 
     private String imageURL;
 }

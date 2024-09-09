@@ -25,14 +25,16 @@ public class ProductController {
     public ResponseEntity<Response> createProduct(@RequestBody Product product) {
         try {
             Product createdProduct = productService.createProduct(product);
-            return ResponseEntity.status(HttpStatus.CREATED).body(new Response("Product created successfully", createdProduct, false));
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new Response("Product created successfully", createdProduct, false));
         } catch (ValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(e.getMessage(), "An error occurred", true));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Response(e.getMessage(), null, true));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response("An error occurred", e.getMessage(), true));
         }
     }
-
     @GetMapping("/{id}")
     public ResponseEntity<Response> getProductById(@PathVariable UUID id) {
         try {
