@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -32,6 +33,19 @@ public class CategoryController {
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping
+    public ResponseEntity<Response> getAllCategories() {
+        try {
+            List<Category> categories = categoryService.getAllCategories();
+            Response response = new Response("Categories retrieved successfully", categories, false);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            Response response = new Response("Error retrieving categories", e.getMessage(), true);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Response> getCategoryById(@PathVariable UUID id) {

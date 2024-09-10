@@ -24,7 +24,7 @@ public class ProductService {
     private ProductRepository productRepository;
 
     @Autowired
-    private UserRepository userRepository; // Assuming UserRepository is used for Vendor
+    private UserRepository userRepository;
 
     @Autowired
     private CategoryRepository categoryRepository;
@@ -35,7 +35,7 @@ public class ProductService {
 
     public Product createProduct(Product product) {
         // Validate and retrieve Vendor
-        UUID vendorId = product.getVendor().getVendorID();  // Use Vendor's ID
+        UUID vendorId = product.getVendor().getVendorID();
         Vendor vendor = vendorRepository.findById(vendorId)
                 .orElseThrow(() -> new ValidationException("Vendor with ID " + vendorId + " does not exist"));
         product.setVendor(vendor);

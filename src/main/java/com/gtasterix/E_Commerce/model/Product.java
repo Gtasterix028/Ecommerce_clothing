@@ -24,11 +24,11 @@ public class Product {
     @Column(nullable = false)
     private Integer stockQuantity;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "categoryID", nullable = false)
     private Category category;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "vendorID", nullable = false)
     private Vendor vendor;
 

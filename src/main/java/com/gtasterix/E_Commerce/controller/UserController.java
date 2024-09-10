@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -28,6 +29,18 @@ public class UserController {
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (Exception e) {
             Response response = new Response("Error creating user", null, true);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<Response> getAllUsers() {
+        try {
+            List<User> users = userService.getAllUsers();
+            Response response = new Response("Users retrieved successfully", users, false);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            Response response = new Response("Error retrieving users", e.getMessage(), true);
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

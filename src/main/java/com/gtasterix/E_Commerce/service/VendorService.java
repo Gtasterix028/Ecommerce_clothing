@@ -20,6 +20,9 @@ public class VendorService {
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
     );
+    private static final Pattern CONTACT_INFO_PATTERN = Pattern.compile(
+            "^[6-9][0-9]{9}$"
+    );
 
     public Vendor createVendor(Vendor vendor) {
         validateVendor(vendor);
@@ -51,7 +54,10 @@ public class VendorService {
         if (vendor.getEmail() == null || !EMAIL_PATTERN.matcher(vendor.getEmail()).matches()) {
             throw new ValidationException("Invalid email format");
         }
-        // Additional validation for contactInfo and address if needed
+        if (vendor.getContactInfo() == null || !CONTACT_INFO_PATTERN.matcher(vendor.getContactInfo()).matches()) {
+            throw new ValidationException("Invalid contact info format");
+        }
+        // Additional validation for address if needed
     }
 
     public Vendor patchVendorById(UUID id, Vendor vendor) {
@@ -59,7 +65,12 @@ public class VendorService {
                 .orElseThrow(() -> new VendorNotFoundException("Vendor with ID " + id + " not found"));
 
         if (vendor.getVendorName() != null) existingVendor.setVendorName(vendor.getVendorName());
-        if (vendor.getContactInfo() != null) existingVendor.setContactInfo(vendor.getContactInfo());
+        if (vendor.getContactInfo() != null) {
+            if (!CONTACT_INFO_PATTERN.matcher(vendor.getContactInfo()).matches()) {
+                throw new ValidationException("Invalid contact info format");
+            }
+            existingVendor.setContactInfo(vendor.getContactInfo());
+        }
         if (vendor.getAddress() != null) existingVendor.setAddress(vendor.getAddress());
         if (vendor.getEmail() != null) {
             if (!EMAIL_PATTERN.matcher(vendor.getEmail()).matches()) {
