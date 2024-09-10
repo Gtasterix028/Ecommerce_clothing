@@ -19,6 +19,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/vendors/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
+                .requestMatchers("/api/shopping-carts/**").permitAll()
 
                 .anyRequest().authenticated(); // Require authentication for other endpoints
 

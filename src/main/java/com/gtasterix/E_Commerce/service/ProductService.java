@@ -34,22 +34,22 @@ public class ProductService {
 
 
     public Product createProduct(Product product) {
-        // Validate and retrieve Vendor
+
         UUID vendorId = product.getVendor().getVendorID();
         Vendor vendor = vendorRepository.findById(vendorId)
                 .orElseThrow(() -> new ValidationException("Vendor with ID " + vendorId + " does not exist"));
         product.setVendor(vendor);
 
-        // Validate and retrieve Category
+
         UUID categoryId = product.getCategory().getCategoryID();
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ValidationException("Category with ID " + categoryId + " does not exist"));
         product.setCategory(category);
 
-        // Perform additional product validations if necessary
+
         validateProduct(product);
 
-        // Save and return the product
+
         return productRepository.save(product);
     }
 

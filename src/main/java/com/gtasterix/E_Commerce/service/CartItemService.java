@@ -3,7 +3,11 @@ package com.gtasterix.E_Commerce.service;
 import com.gtasterix.E_Commerce.exception.CartItemNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
 import com.gtasterix.E_Commerce.model.CartItem;
+import com.gtasterix.E_Commerce.model.Product;
+import com.gtasterix.E_Commerce.model.ShoppingCart;
 import com.gtasterix.E_Commerce.repository.CartItemRepository;
+import com.gtasterix.E_Commerce.repository.ProductRepository;
+import com.gtasterix.E_Commerce.repository.ShoppingCartRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,16 +20,31 @@ public class CartItemService {
     @Autowired
     private CartItemRepository cartItemRepository;
 
+    @Autowired
+    private ShoppingCartRepository shoppingCartRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
+
     public CartItem createCartItem(CartItem cartItem) {
         try {
             validateCartItem(cartItem);
+            ShoppingCart shoppingCart = shoppingCartRepository.findById(cartItem.getCart().getCartID())
+                    .orElseThrow(() -> new ValidationException("Shopping cart with ID " + cartItem.getCart().getCartID() + " not found"));
+            cartItem.setCart(shoppingCart);
+
+            Product product = productRepository.findById(cartItem.getProduct().getProductID())
+                    .orElseThrow(() -> new ValidationException("Product with ID " + cartItem.getProduct().getProductID() + " not found"));
+            cartItem.setProduct(product);
+
             return cartItemRepository.save(cartItem);
         } catch (ValidationException e) {
-            throw new ValidationException("Validation error: " + e.getMessage());
+            throw new ValidationException("Failed to create cart item: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException("Unexpected error occurred while creating cart item: " + e.getMessage());
         }
     }
+
 
     public CartItem getCartItemById(UUID id) {
         try {

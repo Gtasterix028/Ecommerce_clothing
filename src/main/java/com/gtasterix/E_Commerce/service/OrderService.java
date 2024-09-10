@@ -4,7 +4,9 @@ import com.gtasterix.E_Commerce.exception.OrderNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
 import com.gtasterix.E_Commerce.model.Order;
 import com.gtasterix.E_Commerce.model.OrderStatus;
+import com.gtasterix.E_Commerce.model.User;
 import com.gtasterix.E_Commerce.repository.OrderRepository;
+import com.gtasterix.E_Commerce.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,12 +19,20 @@ public class OrderService {
     @Autowired
     private OrderRepository orderRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     public Order createOrder(Order order) {
         try {
             validateOrder(order);
+            User user = userRepository.findById(order.getUser().getUserID())
+                    .orElseThrow(() -> new ValidationException("User with ID " + order.getUser().getUserID() + " not found"));
+            order.setUser(user);
             return orderRepository.save(order);
+        } catch (ValidationException e) {
+            throw new ValidationException("Failed to create order: " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Error creating order", e);
+            throw new RuntimeException("Unexpected error occurred while creating order: " + e.getMessage());
         }
     }
 

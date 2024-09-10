@@ -3,7 +3,9 @@ package com.gtasterix.E_Commerce.service;
 import com.gtasterix.E_Commerce.exception.ShoppingCartNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
 import com.gtasterix.E_Commerce.model.ShoppingCart;
+import com.gtasterix.E_Commerce.model.User;
 import com.gtasterix.E_Commerce.repository.ShoppingCartRepository;
+import com.gtasterix.E_Commerce.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,9 +18,15 @@ public class ShoppingCartService {
     @Autowired
     private ShoppingCartRepository shoppingCartRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     public ShoppingCart createShoppingCart(ShoppingCart shoppingCart) {
         try {
             validateShoppingCart(shoppingCart);
+            User user = userRepository.findById(shoppingCart.getUser().getUserID())
+                    .orElseThrow(() -> new ValidationException("User with ID " + shoppingCart.getUser().getUserID() + " not found"));
+            shoppingCart.setUser(user);  // This should include all fields of User
             return shoppingCartRepository.save(shoppingCart);
         } catch (ValidationException e) {
             throw new ValidationException("Failed to create shopping cart: " + e.getMessage());

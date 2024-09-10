@@ -28,7 +28,7 @@ public class UserController {
             Response response = new Response("User created successfully", createdUser, false);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (Exception e) {
-            Response response = new Response("Error creating user", null, true);
+            Response response = new Response("Error creating user", e.getMessage(), true);
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
