@@ -77,4 +77,17 @@ public class OrderItemController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
         }
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<Response> patchOrderItem(@PathVariable UUID id, @RequestBody OrderItem orderItem) {
+        try {
+            OrderItem updatedOrderItem = orderItemService.patchOrderItem(id, orderItem);
+            return ResponseEntity.ok(new Response("Order item updated successfully", updatedOrderItem, false));
+        } catch (OrderItemNotFoundException | ValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(e.getMessage(), "Validation or not found error", true));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
+        }
+    }
+
 }
