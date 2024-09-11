@@ -2,7 +2,9 @@ package com.gtasterix.E_Commerce.service;
 
 import com.gtasterix.E_Commerce.exception.PaymentNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
+import com.gtasterix.E_Commerce.model.Order;
 import com.gtasterix.E_Commerce.model.Payment;
+import com.gtasterix.E_Commerce.repository.OrderRepository;
 import com.gtasterix.E_Commerce.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,9 +18,21 @@ public class PaymentService {
     @Autowired
     private PaymentRepository paymentRepository;
 
+    @Autowired
+    private OrderRepository orderRepository;
+
     public Payment createPayment(Payment payment) {
-        validatePayment(payment);
-        return paymentRepository.save(payment);
+        try {
+            validatePayment(payment);
+            Order order = orderRepository.findById(payment.getOrder().getOrderID())
+                    .orElseThrow(() -> new ValidationException("Oder with ID " + payment.getOrder().getOrderID() + " not found"));
+            payment.setOrder(order);
+            return paymentRepository.save(payment);
+        }catch (ValidationException e){
+            throw new ValidationException("Failed to create payement "+e.getMessage());
+        }catch (Exception e){
+            throw new RuntimeException("Unexpected error occurred while creating payment: "+e.getMessage());
+        }
     }
 
     public Payment getPaymentById(UUID id) {

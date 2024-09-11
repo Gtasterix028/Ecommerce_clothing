@@ -2,8 +2,12 @@ package com.gtasterix.E_Commerce.service;
 
 import com.gtasterix.E_Commerce.exception.ReviewNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
+import com.gtasterix.E_Commerce.model.Product;
 import com.gtasterix.E_Commerce.model.Review;
+import com.gtasterix.E_Commerce.model.User;
+import com.gtasterix.E_Commerce.repository.ProductRepository;
 import com.gtasterix.E_Commerce.repository.ReviewRepository;
+import com.gtasterix.E_Commerce.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,10 +20,32 @@ public class ReviewService {
     @Autowired
     private ReviewRepository reviewRepository;
 
-    public Review createReview(Review review) {
-        validateReview(review);
-        return reviewRepository.save(review);
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    public Review createReview(Review review){
+        try
+        {
+            validateReview(review);
+            Product product = productRepository.findById(review.getProduct().getProductID())
+                    .orElseThrow(() -> new ValidationException("Product with ID " + review.getProduct().getProductID() + " not found"));
+            review.setProduct(product);
+            User user = userRepository.findById(review.getUser().getUserID())
+                    .orElseThrow(() -> new ValidationException("User with ID " + review.getUser().getUserID() + " not found"));
+            review.setUser(user);
+            return reviewRepository.save(review);
+        }
+        catch (ValidationException e) {
+            throw new ValidationException("Failed to create review of user : " + e.getMessage());
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Unexpected error occurred while creating review of user: " + e.getMessage());
+        }
     }
+
 
     public Review getReviewById(UUID id) {
         return reviewRepository.findById(id)
