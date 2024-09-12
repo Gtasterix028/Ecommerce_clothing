@@ -1,7 +1,9 @@
 package com.gtasterix.E_Commerce.service;
 
+import com.gtasterix.E_Commerce.dto.ProductDTO;
 import com.gtasterix.E_Commerce.exception.ProductNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
+import com.gtasterix.E_Commerce.mapper.ProductMapper;
 import com.gtasterix.E_Commerce.model.Category;
 import com.gtasterix.E_Commerce.model.Product;
 import com.gtasterix.E_Commerce.model.User;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -24,58 +27,96 @@ public class ProductService {
     private ProductRepository productRepository;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     private CategoryRepository categoryRepository;
 
     @Autowired
     private VendorRepository vendorRepository;
 
+    public ProductDTO createProduct(ProductDTO productDTO) {
+        Category category = categoryRepository.findById(productDTO.getCategoryID())
+                .orElseThrow(() -> new ValidationException("Category with ID " + productDTO.getCategoryID() + " does not exist"));
+        Vendor vendor = vendorRepository.findById(productDTO.getVendorID())
+                .orElseThrow(() -> new ValidationException("Vendor with ID " + productDTO.getVendorID() + " does not exist"));
 
-    public Product createProduct(Product product) {
-
-        UUID vendorId = product.getVendor().getVendorID();
-        Vendor vendor = vendorRepository.findById(vendorId)
-                .orElseThrow(() -> new ValidationException("Vendor with ID " + vendorId + " does not exist"));
-        product.setVendor(vendor);
-
-
-        UUID categoryId = product.getCategory().getCategoryID();
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ValidationException("Category with ID " + categoryId + " does not exist"));
-        product.setCategory(category);
-
-
+        Product product = ProductMapper.toEntity(productDTO, category, vendor);
         validateProduct(product);
-
-
-        return productRepository.save(product);
+        Product savedProduct = productRepository.save(product);
+        return ProductMapper.toDTO(savedProduct);
     }
 
-    public Product getProductById(UUID id) {
-        return productRepository.findById(id)
+    public ProductDTO getProductById(UUID id) {
+        Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException("Product with ID " + id + " not found"));
+        return ProductMapper.toDTO(product);
     }
 
-    public Product updateProduct(UUID id, Product product) {
-        validateProduct(product);
+    public List<ProductDTO> getAllProducts() {
+        return productRepository.findAll().stream()
+                .map(ProductMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public ProductDTO updateProduct(UUID id, ProductDTO productDTO) {
         if (!productRepository.existsById(id)) {
             throw new ProductNotFoundException("Product with ID " + id + " not found");
         }
+
+        Category category = categoryRepository.findById(productDTO.getCategoryID())
+                .orElseThrow(() -> new ValidationException("Category with ID " + productDTO.getCategoryID() + " does not exist"));
+        Vendor vendor = vendorRepository.findById(productDTO.getVendorID())
+                .orElseThrow(() -> new ValidationException("Vendor with ID " + productDTO.getVendorID() + " does not exist"));
+
+        Product product = ProductMapper.toEntity(productDTO, category, vendor);
         product.setProductID(id);
-        return productRepository.save(product);
+        validateProduct(product);
+        Product updatedProduct = productRepository.save(product);
+        return ProductMapper.toDTO(updatedProduct);
     }
 
+    public ProductDTO patchProductById(UUID id, ProductDTO productDTO) {
+        Product existingProduct = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("Product with ID " + id + " not found"));
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+        if (productDTO.getProductName() != null) existingProduct.setProductName(productDTO.getProductName());
+        if (productDTO.getDescription() != null) existingProduct.setDescription(productDTO.getDescription());
+        if (productDTO.getPrice() != null) {
+            if (productDTO.getPrice() <= 0) {
+                throw new ValidationException("Product price must be greater than zero");
+            }
+            existingProduct.setPrice(productDTO.getPrice());
+        }
+        if (productDTO.getStockQuantity() != null) {
+            if (productDTO.getStockQuantity() < 0) {
+                throw new ValidationException("Product stock quantity cannot be negative");
+            }
+            existingProduct.setStockQuantity(productDTO.getStockQuantity());
+        }
+        if (productDTO.getCategoryID() != null) {
+            Category category = categoryRepository.findById(productDTO.getCategoryID())
+                    .orElseThrow(() -> new ValidationException("Category with ID " + productDTO.getCategoryID() + " does not exist"));
+            existingProduct.setCategory(category);
+        }
+        if (productDTO.getVendorID() != null) {
+            Vendor vendor = vendorRepository.findById(productDTO.getVendorID())
+                    .orElseThrow(() -> new ValidationException("Vendor with ID " + productDTO.getVendorID() + " does not exist"));
+            existingProduct.setVendor(vendor);
+        }
+        if (productDTO.getImageURL() != null) existingProduct.setImageURL(productDTO.getImageURL());
+
+        Product updatedProduct = productRepository.save(existingProduct);
+        return ProductMapper.toDTO(updatedProduct);
     }
 
-    public Product getProductByName(String productName) {
-        return productRepository.findByProductName(productName)
-                .orElseThrow(() -> new ProductNotFoundException("Product with name " + productName + " not found"));
-    }
+//    public void deleteProductById(UUID productId) {
+//        if (!productRepository.existsById(productId)) {
+//            throw new ProductNotFoundException("Product with ID " + productId + " not found");
+//        }
+//        productRepository.deleteById(productId);
+//    }
+
+
+
+
 
     private void validateProduct(Product product) {
         if (product.getProductName() == null || product.getProductName().isEmpty()) {

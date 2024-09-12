@@ -1,6 +1,8 @@
 package com.gtasterix.E_Commerce.controller;
 
 import com.gtasterix.E_Commerce.Util.Response;
+import com.gtasterix.E_Commerce.dto.UserDTO;
+import com.gtasterix.E_Commerce.mapper.UserMapper;
 import com.gtasterix.E_Commerce.model.User;
 import com.gtasterix.E_Commerce.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -22,10 +25,12 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<Response> createUser(@RequestBody User user) {
+    public ResponseEntity<Response> createUser(@RequestBody UserDTO userDTO) {
         try {
-            User createdUser = userService.createUser(user);
-            Response response = new Response("User created successfully", createdUser, false);
+            User user = UserMapper.toEntity(userDTO);
+            User createdUser = userService.createUser(userDTO);
+            UserDTO createdUserDTO = UserMapper.toDTO(createdUser);
+            Response response = new Response("User created successfully", createdUserDTO, false);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (Exception e) {
             Response response = new Response("Error creating user", e.getMessage(), true);
@@ -37,7 +42,8 @@ public class UserController {
     public ResponseEntity<Response> getAllUsers() {
         try {
             List<User> users = userService.getAllUsers();
-            Response response = new Response("Users retrieved successfully", users, false);
+            List<UserDTO> userDTOs = users.stream().map(UserMapper::toDTO).collect(Collectors.toList());
+            Response response = new Response("Users retrieved successfully", userDTOs, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             Response response = new Response("Error retrieving users", e.getMessage(), true);
@@ -49,7 +55,8 @@ public class UserController {
     public ResponseEntity<Response> getUserById(@PathVariable UUID id) {
         try {
             User user = userService.getUserById(id);
-            Response response = new Response("User found", user, false);
+            UserDTO userDTO = UserMapper.toDTO(user);
+            Response response = new Response("User found", userDTO, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             Response response = new Response("User not found", e.getMessage(), true);
@@ -61,7 +68,8 @@ public class UserController {
     public ResponseEntity<Response> getUserByUserName(@PathVariable String username) {
         try {
             User user = userService.getUserByUsername(username);
-            Response response = new Response("User found", user, false);
+            UserDTO userDTO = UserMapper.toDTO(user);
+            Response response = new Response("User found", userDTO, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             Response response = new Response("User not found", e.getMessage(), true);
@@ -73,7 +81,8 @@ public class UserController {
     public ResponseEntity<Response> getUserByName(@PathVariable String fullName) {
         try {
             User user = userService.getUserByName(fullName);
-            Response response = new Response("User found", user, false);
+            UserDTO userDTO = UserMapper.toDTO(user);
+            Response response = new Response("User found", userDTO, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             Response response = new Response("User not found", e.getMessage(), true);
@@ -82,10 +91,12 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Response> updateUserById(@PathVariable UUID id, @RequestBody User user) {
+    public ResponseEntity<Response> updateUserById(@PathVariable UUID id, @RequestBody UserDTO userDTO) {
         try {
-            User updatedUser = userService.updateUserById(id, user);
-            Response response = new Response("User updated successfully", updatedUser, false);
+            User user = UserMapper.toEntity(userDTO);
+            User updatedUser = userService.updateUserById(id, userDTO);
+            UserDTO updatedUserDTO = UserMapper.toDTO(updatedUser);
+            Response response = new Response("User updated successfully", updatedUserDTO, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             Response response = new Response("Error updating user", e.getMessage(), true);
@@ -94,10 +105,12 @@ public class UserController {
     }
 
     @PutMapping("/username/{username}")
-    public ResponseEntity<Response> updateUserByUsername(@PathVariable String username, @RequestBody User user) {
+    public ResponseEntity<Response> updateUserByUsername(@PathVariable String username, @RequestBody UserDTO userDTO) {
         try {
-            User updatedUser = userService.updateUserByUsername(username, user);
-            Response response = new Response("User updated successfully", updatedUser, false);
+            User user = UserMapper.toEntity(userDTO);
+            User updatedUser = userService.updateUserByUsername(username, userDTO);
+            UserDTO updatedUserDTO = UserMapper.toDTO(updatedUser);
+            Response response = new Response("User updated successfully", updatedUserDTO, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             Response response = new Response("Error updating user", e.getMessage(), true);
@@ -106,10 +119,12 @@ public class UserController {
     }
 
     @PutMapping("/email/{email}")
-    public ResponseEntity<Response> updateUserByEmail(@PathVariable String email, @RequestBody User user) {
+    public ResponseEntity<Response> updateUserByEmail(@PathVariable String email, @RequestBody UserDTO userDTO) {
         try {
-            User updatedUser = userService.updateUserByEmail(email, user);
-            Response response = new Response("User updated successfully", updatedUser, false);
+            User user = UserMapper.toEntity(userDTO);
+            User updatedUser = userService.updateUserByEmail(email, userDTO);
+            UserDTO updatedUserDTO = UserMapper.toDTO(updatedUser);
+            Response response = new Response("User updated successfully", updatedUserDTO, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             Response response = new Response("Error updating user", e.getMessage(), true);
@@ -118,10 +133,12 @@ public class UserController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Response> patchUserById(@PathVariable UUID id, @RequestBody User user) {
+    public ResponseEntity<Response> patchUserById(@PathVariable UUID id, @RequestBody UserDTO userDTO) {
         try {
-            User patchedUser = userService.patchUserById(id, user);
-            Response response = new Response("User patched successfully", patchedUser, false);
+            User user = UserMapper.toEntity(userDTO);
+            User patchedUser = userService.patchUserById(id, userDTO);
+            UserDTO patchedUserDTO = UserMapper.toDTO(patchedUser);
+            Response response = new Response("User patched successfully", patchedUserDTO, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             Response response = new Response("Error patching user", e.getMessage(), true);
@@ -130,10 +147,12 @@ public class UserController {
     }
 
     @PatchMapping("/username/{username}")
-    public ResponseEntity<Response> patchUserByUsername(@PathVariable String username, @RequestBody User user) {
+    public ResponseEntity<Response> patchUserByUsername(@PathVariable String username, @RequestBody UserDTO userDTO) {
         try {
-            User patchedUser = userService.patchUserByUsername(username, user);
-            Response response = new Response("User patched successfully", patchedUser, false);
+            User user = UserMapper.toEntity(userDTO);
+            User patchedUser = userService.patchUserByUsername(username, userDTO);
+            UserDTO patchedUserDTO = UserMapper.toDTO(patchedUser);
+            Response response = new Response("User patched successfully", patchedUserDTO, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             Response response = new Response("Error patching user", e.getMessage(), true);
@@ -142,10 +161,12 @@ public class UserController {
     }
 
     @PatchMapping("/email/{email}")
-    public ResponseEntity<Response> patchUserByEmail(@PathVariable String email, @RequestBody User user) {
+    public ResponseEntity<Response> patchUserByEmail(@PathVariable String email, @RequestBody UserDTO userDTO) {
         try {
-            User patchedUser = userService.patchUserByEmail(email, user);
-            Response response = new Response("User patched successfully", patchedUser, false);
+            User user = UserMapper.toEntity(userDTO);
+            User patchedUser = userService.patchUserByEmail(email, userDTO);
+            UserDTO patchedUserDTO = UserMapper.toDTO(patchedUser);
+            Response response = new Response("User patched successfully", patchedUserDTO, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             Response response = new Response("Error patching user", e.getMessage(), true);
@@ -190,14 +211,23 @@ public class UserController {
     }
 
     @PostMapping("/update-password")
-    public ResponseEntity<Response> updatePasswordByEmail(@RequestParam("email") String email, @RequestParam("newPassword") String newPassword) {
+    public ResponseEntity<Response> updatePasswordByEmail(
+            @RequestParam("email") String email,
+            @RequestParam("oldPassword") String oldPassword,
+            @RequestParam("newPassword") String newPassword) {
+
         try {
-            userService.updatePasswordByEmail(email, newPassword);
+            userService.updatePasswordByEmail(email, oldPassword, newPassword);
             Response response = new Response("Password updated successfully", null, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            Response response = new Response("Error updating password", e.getMessage(), true);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             Response response = new Response("Error updating password", e.getMessage(), true);
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
 }

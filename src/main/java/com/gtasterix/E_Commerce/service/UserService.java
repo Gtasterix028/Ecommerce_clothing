@@ -1,8 +1,11 @@
 package com.gtasterix.E_Commerce.service;
 
+import com.gtasterix.E_Commerce.dto.UserDTO;
 import com.gtasterix.E_Commerce.exception.EmailAlreadyExistsException;
 import com.gtasterix.E_Commerce.exception.ResourceNotFoundException;
 import com.gtasterix.E_Commerce.exception.UserNotFoundException;
+import com.gtasterix.E_Commerce.exception.ValidationException;
+import com.gtasterix.E_Commerce.model.Role;
 import com.gtasterix.E_Commerce.model.User;
 import com.gtasterix.E_Commerce.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,121 +30,76 @@ public class UserService {
     private static final String EMAIL_REGEX = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
     private static final String MOBILE_REGEX = "^[6-9][0-9]{9}$";
 
-    public User createUser(User user) {
-        validateEmail(user.getEmail());
-        validateMobileNumber(user.getMobileNumber());
+    public User createUser(UserDTO userDTO) {
+        validateUserDTO(userDTO);
 
-        if (userRepository.existsByEmail(user.getEmail())) {
+        if (userRepository.existsByEmail(userDTO.getEmail())) {
             throw new EmailAlreadyExistsException("Email already exists");
         }
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        String username = generateUniqueUsername();
-        user.setUsername(username);
+
+        User user = convertDTOToEntity(userDTO);
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        user.setUsername(generateUniqueUsername());
 
         return userRepository.save(user);
     }
 
-    public User updateUserById(UUID userId, User user) {
+    public User updateUserById(UUID userId, UserDTO userDTO) {
         User existingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        validateEmail(user.getEmail());
-        validateMobileNumber(user.getMobileNumber());
+        validateUserDTO(userDTO);
 
-        existingUser.setFullName(user.getFullName());
-        existingUser.setEmail(user.getEmail());
-        existingUser.setMobileNumber(user.getMobileNumber());
-        existingUser.setAddress(user.getAddress());
-        existingUser.setRole(user.getRole());
+        updateExistingUserFromDTO(existingUser, userDTO);
 
         return userRepository.save(existingUser);
     }
 
-    public User updateUserByUsername(String username, User user) {
+    public User updateUserByUsername(String username, UserDTO userDTO) {
         User existingUser = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        validateEmail(user.getEmail());
-        validateMobileNumber(user.getMobileNumber());
+        validateUserDTO(userDTO);
 
-        existingUser.setFullName(user.getFullName());
-        existingUser.setEmail(user.getEmail());
-        existingUser.setMobileNumber(user.getMobileNumber());
-        existingUser.setAddress(user.getAddress());
-        existingUser.setRole(user.getRole());
+        updateExistingUserFromDTO(existingUser, userDTO);
 
         return userRepository.save(existingUser);
     }
 
-    public User updateUserByEmail(String email, User user) {
+    public User updateUserByEmail(String email, UserDTO userDTO) {
         User existingUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        validateEmail(user.getEmail());
-        validateMobileNumber(user.getMobileNumber());
+        validateUserDTO(userDTO);
 
-        existingUser.setFullName(user.getFullName());
-        existingUser.setEmail(user.getEmail());
-        existingUser.setMobileNumber(user.getMobileNumber());
-        existingUser.setAddress(user.getAddress());
-        existingUser.setRole(user.getRole());
+        updateExistingUserFromDTO(existingUser, userDTO);
 
         return userRepository.save(existingUser);
     }
 
-    public User patchUserById(UUID userId, User user) {
+    public User patchUserById(UUID userId, UserDTO userDTO) {
         User existingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (user.getFullName() != null) existingUser.setFullName(user.getFullName());
-        if (user.getEmail() != null) {
-            validateEmail(user.getEmail());
-            existingUser.setEmail(user.getEmail());
-        }
-        if (user.getMobileNumber() != null) {
-            validateMobileNumber(user.getMobileNumber());
-            existingUser.setMobileNumber(user.getMobileNumber());
-        }
-        if (user.getAddress() != null) existingUser.setAddress(user.getAddress());
-        if (user.getRole() != null) existingUser.setRole(user.getRole());
+        patchExistingUserFromDTO(existingUser, userDTO);
 
         return userRepository.save(existingUser);
     }
 
-    public User patchUserByUsername(String username, User user) {
+    public User patchUserByUsername(String username, UserDTO userDTO) {
         User existingUser = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (user.getFullName() != null) existingUser.setFullName(user.getFullName());
-        if (user.getEmail() != null) {
-            validateEmail(user.getEmail());
-            existingUser.setEmail(user.getEmail());
-        }
-        if (user.getMobileNumber() != null) {
-            validateMobileNumber(user.getMobileNumber());
-            existingUser.setMobileNumber(user.getMobileNumber());
-        }
-        if (user.getAddress() != null) existingUser.setAddress(user.getAddress());
-        if (user.getRole() != null) existingUser.setRole(user.getRole());
+        patchExistingUserFromDTO(existingUser, userDTO);
 
         return userRepository.save(existingUser);
     }
 
-    public User patchUserByEmail(String email, User user) {
+    public User patchUserByEmail(String email, UserDTO userDTO) {
         User existingUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (user.getFullName() != null) existingUser.setFullName(user.getFullName());
-        if (user.getEmail() != null) {
-            validateEmail(user.getEmail());
-            existingUser.setEmail(user.getEmail());
-        }
-        if (user.getMobileNumber() != null) {
-            validateMobileNumber(user.getMobileNumber());
-            existingUser.setMobileNumber(user.getMobileNumber());
-        }
-        if (user.getAddress() != null) existingUser.setAddress(user.getAddress());
-        if (user.getRole() != null) existingUser.setRole(user.getRole());
+        patchExistingUserFromDTO(existingUser, userDTO);
 
         return userRepository.save(existingUser);
     }
@@ -191,22 +149,38 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
-    public void updatePasswordByEmail(String email, String newPassword) {
+    public void updatePasswordByEmail(String email, String oldPassword, String newPassword) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        // Check if the old password matches
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Old password is incorrect");
+        }
+
+        // Update the password
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
+    private void validateUserDTO(UserDTO userDTO) {
 
-    private void validateEmail(String email) {
-        if (email == null || !Pattern.matches(EMAIL_REGEX, email)) {
-            throw new IllegalArgumentException("Invalid email format");
+        if (userDTO.getFullName() == null || userDTO.getFullName().isEmpty()) {
+            throw new ValidationException("Full name is required");
         }
-    }
-
-    private void validateMobileNumber(String mobileNumber) {
-        if (mobileNumber == null || !Pattern.matches(MOBILE_REGEX, mobileNumber)) {
-            throw new IllegalArgumentException("Invalid mobile number format");
+        if (userDTO.getEmail() == null || !Pattern.matches(EMAIL_REGEX, userDTO.getEmail())) {
+            throw new ValidationException("Email should be valid");
+        }
+        if (userDTO.getMobileNumber() == null || !Pattern.matches(MOBILE_REGEX, userDTO.getMobileNumber())) {
+            throw new ValidationException("Mobile number must be valid and start with 6-9");
+        }
+        if (userDTO.getAddress() == null || userDTO.getAddress().length() < 5 || userDTO.getAddress().length() > 255) {
+            throw new ValidationException("Address must be between 5 and 255 characters");
+        }
+        if (userDTO.getRole() == null) {
+            throw new ValidationException("Role is required");
+        }
+        if (userDTO.getPassword() == null || userDTO.getPassword().length() < 6) {
+            throw new ValidationException("Password must be at least 6 characters long");
         }
     }
 
@@ -219,5 +193,51 @@ public class UserService {
             username = prefix + String.format("%04d", number); // Generates a username like U1234
         } while (userRepository.existsByUsername(username));
         return username;
+    }
+
+    private User convertDTOToEntity(UserDTO userDTO) {
+        User user = new User();
+        user.setUserID(userDTO.getUserID());
+        user.setUsername(userDTO.getUsername());
+        user.setFullName(userDTO.getFullName());
+        user.setEmail(userDTO.getEmail());
+        user.setMobileNumber(userDTO.getMobileNumber());
+        user.setAddress(userDTO.getAddress());
+        user.setRole(userDTO.getRole());
+        return user;
+    }
+
+    private void updateExistingUserFromDTO(User existingUser, UserDTO userDTO) {
+        existingUser.setFullName(userDTO.getFullName());
+        existingUser.setEmail(userDTO.getEmail());
+        existingUser.setMobileNumber(userDTO.getMobileNumber());
+        existingUser.setAddress(userDTO.getAddress());
+        existingUser.setRole(userDTO.getRole());
+    }
+
+    private void patchExistingUserFromDTO(User existingUser, UserDTO userDTO) {
+        if (userDTO.getFullName() != null) existingUser.setFullName(userDTO.getFullName());
+        if (userDTO.getEmail() != null) {
+            validateEmail(userDTO.getEmail());
+            existingUser.setEmail(userDTO.getEmail());
+        }
+        if (userDTO.getMobileNumber() != null) {
+            validateMobileNumber(userDTO.getMobileNumber());
+            existingUser.setMobileNumber(userDTO.getMobileNumber());
+        }
+        if (userDTO.getAddress() != null) existingUser.setAddress(userDTO.getAddress());
+        if (userDTO.getRole() != null) existingUser.setRole(userDTO.getRole());
+    }
+
+    private void validateEmail(String email) {
+        if (email == null || !Pattern.matches(EMAIL_REGEX, email)) {
+            throw new ValidationException("Invalid email format");
+        }
+    }
+
+    private void validateMobileNumber(String mobileNumber) {
+        if (mobileNumber == null || !Pattern.matches(MOBILE_REGEX, mobileNumber)) {
+            throw new ValidationException("Invalid mobile number format");
+        }
     }
 }

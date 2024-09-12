@@ -1,6 +1,6 @@
 package com.gtasterix.E_Commerce.model;
 
-enum Role {
+ public enum Role {
     ADMIN,
     CUSTOMER,
     VENDOR

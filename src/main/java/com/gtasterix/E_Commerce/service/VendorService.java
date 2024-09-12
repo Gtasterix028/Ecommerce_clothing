@@ -1,15 +1,17 @@
 package com.gtasterix.E_Commerce.service;
 
+import com.gtasterix.E_Commerce.dto.VendorDTO;
 import com.gtasterix.E_Commerce.exception.VendorNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
+import com.gtasterix.E_Commerce.mapper.VendorMapper;
 import com.gtasterix.E_Commerce.model.Vendor;
 import com.gtasterix.E_Commerce.repository.VendorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 public class VendorService {
@@ -24,7 +26,9 @@ public class VendorService {
             "^[6-9][0-9]{9}$"
     );
 
-    public Vendor createVendor(Vendor vendor) {
+    // Modify this method to accept VendorDTO
+    public Vendor createVendor(VendorDTO vendorDTO) {
+        Vendor vendor = VendorMapper.toEntity(vendorDTO);
         validateVendor(vendor);
         return vendorRepository.save(vendor);
     }
@@ -34,7 +38,8 @@ public class VendorService {
                 .orElseThrow(() -> new VendorNotFoundException("Vendor with ID " + id + " not found"));
     }
 
-    public Vendor updateVendor(UUID id, Vendor vendor) {
+    public Vendor updateVendor(UUID id, VendorDTO vendorDTO) {
+        Vendor vendor = VendorMapper.toEntity(vendorDTO);
         validateVendor(vendor);
         if (!vendorRepository.existsById(id)) {
             throw new VendorNotFoundException("Vendor with ID " + id + " not found");
@@ -47,36 +52,16 @@ public class VendorService {
         return vendorRepository.findAll();
     }
 
-    private void validateVendor(Vendor vendor) {
-        if (vendor.getVendorName() == null || vendor.getVendorName().isEmpty()) {
-            throw new ValidationException("Vendor name cannot be null or empty");
-        }
-        if (vendor.getEmail() == null || !EMAIL_PATTERN.matcher(vendor.getEmail()).matches()) {
-            throw new ValidationException("Invalid email format");
-        }
-        if (vendor.getContactInfo() == null || !CONTACT_INFO_PATTERN.matcher(vendor.getContactInfo()).matches()) {
-            throw new ValidationException("Invalid contact info format");
-        }
-        // Additional validation for address if needed
-    }
-
-    public Vendor patchVendorById(UUID id, Vendor vendor) {
+    public Vendor patchVendorById(UUID id, VendorDTO vendorDTO) {
         Vendor existingVendor = vendorRepository.findById(id)
                 .orElseThrow(() -> new VendorNotFoundException("Vendor with ID " + id + " not found"));
 
-        if (vendor.getVendorName() != null) existingVendor.setVendorName(vendor.getVendorName());
-        if (vendor.getContactInfo() != null) {
-            if (!CONTACT_INFO_PATTERN.matcher(vendor.getContactInfo()).matches()) {
+        if (vendorDTO.getVendorName() != null) existingVendor.setVendorName(vendorDTO.getVendorName());
+        if (vendorDTO.getContactInfo() != null) {
+            if (!CONTACT_INFO_PATTERN.matcher(vendorDTO.getContactInfo()).matches()) {
                 throw new ValidationException("Invalid contact info format");
             }
-            existingVendor.setContactInfo(vendor.getContactInfo());
-        }
-        if (vendor.getAddress() != null) existingVendor.setAddress(vendor.getAddress());
-        if (vendor.getEmail() != null) {
-            if (!EMAIL_PATTERN.matcher(vendor.getEmail()).matches()) {
-                throw new ValidationException("Invalid email format");
-            }
-            existingVendor.setEmail(vendor.getEmail());
+            existingVendor.setContactInfo(vendorDTO.getContactInfo());
         }
 
         return vendorRepository.save(existingVendor);
@@ -85,7 +70,15 @@ public class VendorService {
     public void deleteVendorById(UUID id) {
         Vendor existingVendor = vendorRepository.findById(id)
                 .orElseThrow(() -> new VendorNotFoundException("Vendor with ID " + id + " not found"));
-
         vendorRepository.delete(existingVendor);
+    }
+
+    private void validateVendor(Vendor vendor) {
+        if (vendor.getVendorName() == null || vendor.getVendorName().isEmpty()) {
+            throw new ValidationException("Vendor name cannot be null or empty");
+        }
+        if (vendor.getContactInfo() == null || !CONTACT_INFO_PATTERN.matcher(vendor.getContactInfo()).matches()) {
+            throw new ValidationException("Invalid contact info format");
+        }
     }
 }
