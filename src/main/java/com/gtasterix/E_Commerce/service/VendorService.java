@@ -26,7 +26,6 @@ public class VendorService {
             "^[6-9][0-9]{9}$"
     );
 
-    // Modify this method to accept VendorDTO
     public Vendor createVendor(VendorDTO vendorDTO) {
         Vendor vendor = VendorMapper.toEntity(vendorDTO);
         validateVendor(vendor);
@@ -63,6 +62,13 @@ public class VendorService {
             }
             existingVendor.setContactInfo(vendorDTO.getContactInfo());
         }
+        if (vendorDTO.getAddress() != null) existingVendor.setAddress(vendorDTO.getAddress());
+        if (vendorDTO.getEmail() != null) {
+            if (!EMAIL_PATTERN.matcher(vendorDTO.getEmail()).matches()) {
+                throw new ValidationException("Invalid email format");
+            }
+            existingVendor.setEmail(vendorDTO.getEmail());
+        }
 
         return vendorRepository.save(existingVendor);
     }
@@ -76,6 +82,9 @@ public class VendorService {
     private void validateVendor(Vendor vendor) {
         if (vendor.getVendorName() == null || vendor.getVendorName().isEmpty()) {
             throw new ValidationException("Vendor name cannot be null or empty");
+        }
+        if (vendor.getEmail() == null || !EMAIL_PATTERN.matcher(vendor.getEmail()).matches()) {
+            throw new ValidationException("Invalid email format");
         }
         if (vendor.getContactInfo() == null || !CONTACT_INFO_PATTERN.matcher(vendor.getContactInfo()).matches()) {
             throw new ValidationException("Invalid contact info format");

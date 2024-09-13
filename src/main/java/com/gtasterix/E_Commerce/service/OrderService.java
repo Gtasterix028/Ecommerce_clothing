@@ -1,7 +1,9 @@
 package com.gtasterix.E_Commerce.service;
 
+import com.gtasterix.E_Commerce.dto.OrderDTO;
 import com.gtasterix.E_Commerce.exception.OrderNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
+import com.gtasterix.E_Commerce.mapper.OrderMapper;
 import com.gtasterix.E_Commerce.model.Order;
 import com.gtasterix.E_Commerce.model.OrderStatus;
 import com.gtasterix.E_Commerce.model.User;
@@ -22,89 +24,73 @@ public class OrderService {
     @Autowired
     private UserRepository userRepository;
 
-    public Order createOrder(Order order) {
-        try {
-            validateOrder(order);
-            User user = userRepository.findById(order.getUser().getUserID())
-                    .orElseThrow(() -> new ValidationException("User with ID " + order.getUser().getUserID() + " not found"));
-            order.setUser(user);
-            return orderRepository.save(order);
-        } catch (ValidationException e) {
-            throw new ValidationException("Failed to create order: " + e.getMessage());
-        } catch (Exception e) {
-            throw new RuntimeException("Unexpected error occurred while creating order: " + e.getMessage());
-        }
+    public OrderDTO createOrder(OrderDTO orderDTO) {
+        validateOrderDTO(orderDTO);
+        User user = userRepository.findById(orderDTO.getUserID())
+                .orElseThrow(() -> new ValidationException("User with ID " + orderDTO.getUserID() + " not found"));
+        Order order = OrderMapper.toEntity(orderDTO, user);
+        Order savedOrder = orderRepository.save(order);
+        return OrderMapper.toDTO(savedOrder);
     }
 
-    public Order getOrderById(UUID orderId) {
-        try {
-            return orderRepository.findById(orderId)
-                    .orElseThrow(() -> new OrderNotFoundException("Order not found with ID: " + orderId));
-        } catch (Exception e) {
-            throw new RuntimeException("Error retrieving order", e);
-        }
+    public OrderDTO getOrderById(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with ID: " + orderId));
+        return OrderMapper.toDTO(order);
     }
 
-    public Order updateOrderById(UUID orderId, Order order) {
-        try {
-            validateOrder(order);
-            if (!orderRepository.existsById(orderId)) {
-                throw new OrderNotFoundException("Order not found with ID: " + orderId);
+    public OrderDTO updateOrderById(UUID orderId, OrderDTO orderDTO) {
+        validateOrderDTO(orderDTO);
+        if (!orderRepository.existsById(orderId)) {
+            throw new OrderNotFoundException("Order not found with ID: " + orderId);
+        }
+        User user = userRepository.findById(orderDTO.getUserID())
+                .orElseThrow(() -> new ValidationException("User with ID " + orderDTO.getUserID() + " not found"));
+        Order order = OrderMapper.toEntity(orderDTO, user);
+        order.setOrderID(orderId); // Ensure ID is not modified
+        Order updatedOrder = orderRepository.save(order);
+        return OrderMapper.toDTO(updatedOrder);
+    }
+
+    public OrderDTO patchOrderById(UUID orderId, OrderDTO orderDTO) {
+        Order existingOrder = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with ID: " + orderId));
+
+        if (orderDTO.getOrderDate() != null) existingOrder.setOrderDate(orderDTO.getOrderDate());
+        if (orderDTO.getTotalAmount() != null) existingOrder.setTotalAmount(orderDTO.getTotalAmount());
+        if (orderDTO.getStatus() != null) {
+            if (!isValidStatus(orderDTO.getStatus())) {
+                throw new ValidationException("Invalid order status");
             }
-            order.setOrderID(orderId); // Ensure ID is not modified
-            return orderRepository.save(order);
-        } catch (Exception e) {
-            throw new RuntimeException("Error updating order", e);
+            existingOrder.setStatus(orderDTO.getStatus());
         }
-    }
 
-    public Order patchOrderById(UUID orderId, Order order) {
-        try {
-            Order existingOrder = orderRepository.findById(orderId)
-                    .orElseThrow(() -> new OrderNotFoundException("Order not found with ID: " + orderId));
-
-            if (order.getOrderDate() != null) existingOrder.setOrderDate(order.getOrderDate());
-            if (order.getTotalAmount() != null) existingOrder.setTotalAmount(order.getTotalAmount());
-            if (order.getStatus() != null) {
-                if (!isValidStatus(order.getStatus())) {
-                    throw new ValidationException("Invalid order status");
-                }
-                existingOrder.setStatus(order.getStatus());
-            }
-
-            return orderRepository.save(existingOrder);
-        } catch (Exception e) {
-            throw new RuntimeException("Error patching order", e);
-        }
+        Order updatedOrder = orderRepository.save(existingOrder);
+        return OrderMapper.toDTO(updatedOrder);
     }
 
     public void deleteOrderById(UUID orderId) {
-        try {
-            if (!orderRepository.existsById(orderId)) {
-                throw new OrderNotFoundException("Order not found with ID: " + orderId);
-            }
-            orderRepository.deleteById(orderId);
-        } catch (Exception e) {
-            throw new RuntimeException("Error deleting order", e);
+        if (!orderRepository.existsById(orderId)) {
+            throw new OrderNotFoundException("Order not found with ID: " + orderId);
         }
+        orderRepository.deleteById(orderId);
     }
 
-    public List<Order> getAllOrders() {
-        try {
-            return orderRepository.findAll();
-        } catch (Exception e) {
-            throw new RuntimeException("Error retrieving all orders", e);
-        }
+    public List<OrderDTO> getAllOrders() {
+        List<Order> orders = orderRepository.findAll();
+        return orders.stream()
+                .map(OrderMapper::toDTO)
+                .toList();
     }
 
-    private void validateOrder(Order order) {
-        if (order.getOrderDate() == null) {
+    private void validateOrderDTO(OrderDTO orderDTO) {
+        if (orderDTO.getOrderDate() == null) {
             throw new ValidationException("Order date cannot be null");
         }
-        if (order.getTotalAmount() == null || order.getTotalAmount() <= 0) {
+        if (orderDTO.getTotalAmount() == null || orderDTO.getTotalAmount() <= 0) {
             throw new ValidationException("Total amount must be greater than 0");
         }
-        if (order.getStatus() == null) {
+        if (orderDTO.getStatus() == null) {
             throw new ValidationException("Order status cannot be null");
         }
     }
@@ -117,6 +103,4 @@ public class OrderService {
         }
         return false;
     }
-
-
 }

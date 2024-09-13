@@ -26,5 +26,5 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private OrderStatus status;  // Define enum OrderStatus with possible values
+    private OrderStatus status;
 }

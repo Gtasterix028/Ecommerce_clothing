@@ -1,16 +1,17 @@
 package com.gtasterix.E_Commerce.service;
 
+import com.gtasterix.E_Commerce.dto.CategoryDTO;
 import com.gtasterix.E_Commerce.exception.CategoryNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
+import com.gtasterix.E_Commerce.mapper.CategoryMapper;
 import com.gtasterix.E_Commerce.model.Category;
 import com.gtasterix.E_Commerce.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class CategoryService {
@@ -18,44 +19,31 @@ public class CategoryService {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    public Category createCategory(Category category) {
+    public CategoryDTO createCategory(CategoryDTO categoryDTO) {
+        Category category = CategoryMapper.toEntity(categoryDTO);
         validateCategory(category);
-        try {
-            return categoryRepository.save(category);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create category", e);
-        }
+        return CategoryMapper.toDTO(categoryRepository.save(category));
     }
 
-    public Category getCategoryById(UUID categoryId) {
-        return categoryRepository.findById(categoryId)
+    public CategoryDTO getCategoryById(UUID categoryId) {
+        Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new CategoryNotFoundException("Category with ID " + categoryId + " not found"));
+        return CategoryMapper.toDTO(category);
     }
 
-    public Category updateCategoryById(UUID categoryId, Category category) {
-        validateCategory(category);
+    public CategoryDTO updateCategoryById(UUID categoryId, CategoryDTO categoryDTO) {
         if (!categoryRepository.existsById(categoryId)) {
             throw new CategoryNotFoundException("Category with ID " + categoryId + " not found");
         }
+        Category category = CategoryMapper.toEntity(categoryDTO);
         category.setCategoryID(categoryId);
-        try {
-            return categoryRepository.save(category);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to update category with ID " + categoryId, e);
-        }
+        return CategoryMapper.toDTO(categoryRepository.save(category));
     }
 
-    public List<Category> getAllCategories() {
-        try {
-            return categoryRepository.findAll();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to retrieve all categories", e);
-        }
-    }
-
-    public Category getCategoryByName(String name) {
-        return categoryRepository.findByCategoryName(name)
-                .orElseThrow(() -> new CategoryNotFoundException("Category with name " + name + " not found"));
+    public List<CategoryDTO> getAllCategories() {
+        return categoryRepository.findAll().stream()
+                .map(CategoryMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     private void validateCategory(Category category) {
@@ -64,36 +52,32 @@ public class CategoryService {
         }
     }
 
-    public Category patchCategoryById(UUID categoryId, Map<String, Object> updates) {
-        Category existingCategory = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new CategoryNotFoundException("Category with ID " + categoryId + " not found"));
-
-        if (updates.containsKey("name")) {
-            String name = (String) updates.get("name");
-            if (name == null || name.isEmpty()) {
-                throw new ValidationException("Category name cannot be null or empty");
-            }
-            existingCategory.setCategoryName(name);
-        }
-        if (updates.containsKey("description")) {
-            existingCategory.setDescription((String) updates.get("description"));
-        }
-
-        try {
-            return categoryRepository.save(existingCategory);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to partially update category with ID " + categoryId, e);
-        }
-    }
-
     public void deleteCategoryById(UUID categoryId) {
-        Category existingCategory = categoryRepository.findById(categoryId)
+        Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new CategoryNotFoundException("Category with ID " + categoryId + " not found"));
-
-        try {
-            categoryRepository.delete(existingCategory);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to delete category with ID " + categoryId, e);
-        }
+        categoryRepository.delete(category);
     }
-}
+
+
+        public CategoryDTO patchCategoryById(UUID categoryId, CategoryDTO categoryDTO) {
+            Category existingCategory = categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new CategoryNotFoundException("Category with ID " + categoryId + " not found"));
+
+
+            if (categoryDTO.getCategoryName() != null && !categoryDTO.getCategoryName().isEmpty()) {
+                existingCategory.setCategoryName(categoryDTO.getCategoryName());
+            }
+
+            if (categoryDTO.getDescription() != null) {
+                existingCategory.setDescription(categoryDTO.getDescription());
+            }
+
+
+            Category updatedCategory = categoryRepository.save(existingCategory);
+            return CategoryMapper.toDTO(updatedCategory);
+        }
+
+
+    }
+
+

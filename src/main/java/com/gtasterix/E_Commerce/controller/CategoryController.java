@@ -1,7 +1,7 @@
 package com.gtasterix.E_Commerce.controller;
 
 import com.gtasterix.E_Commerce.Util.Response;
-import com.gtasterix.E_Commerce.model.Category;
+import com.gtasterix.E_Commerce.dto.CategoryDTO;
 import com.gtasterix.E_Commerce.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -23,9 +22,9 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<Response> createCategory(@RequestBody Category category) {
+    public ResponseEntity<Response> createCategory(@RequestBody CategoryDTO categoryDTO) {
         try {
-            Category createdCategory = categoryService.createCategory(category);
+            CategoryDTO createdCategory = categoryService.createCategory(categoryDTO);
             Response response = new Response("Category created successfully", createdCategory, false);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (Exception e) {
@@ -37,7 +36,7 @@ public class CategoryController {
     @GetMapping
     public ResponseEntity<Response> getAllCategories() {
         try {
-            List<Category> categories = categoryService.getAllCategories();
+            List<CategoryDTO> categories = categoryService.getAllCategories();
             Response response = new Response("Categories retrieved successfully", categories, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
@@ -46,24 +45,11 @@ public class CategoryController {
         }
     }
 
-
     @GetMapping("/{id}")
     public ResponseEntity<Response> getCategoryById(@PathVariable UUID id) {
         try {
-            Category category = categoryService.getCategoryById(id);
-            Response response = new Response("Category found", category, false);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (Exception e) {
-            Response response = new Response("Category not found", e.getMessage(), true);
-            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-        }
-    }
-
-    @GetMapping("/name/{name}")
-    public ResponseEntity<Response> getCategoryByName(@PathVariable String name) {
-        try {
-            Category category = categoryService.getCategoryByName(name);
-            Response response = new Response("Category found", category, false);
+            CategoryDTO categoryDTO = categoryService.getCategoryById(id);
+            Response response = new Response("Category found", categoryDTO, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             Response response = new Response("Category not found", e.getMessage(), true);
@@ -72,21 +58,9 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Response> updateCategoryById(@PathVariable UUID id, @RequestBody Category category) {
+    public ResponseEntity<Response> updateCategoryById(@PathVariable UUID id, @RequestBody CategoryDTO categoryDTO) {
         try {
-            Category updatedCategory = categoryService.updateCategoryById(id, category);
-            Response response = new Response("Category updated successfully", updatedCategory, false);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (Exception e) {
-            Response response = new Response("Error updating category", e.getMessage(), true);
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @PatchMapping("/{id}")
-    public ResponseEntity<Response> partiallyUpdateCategoryById(@PathVariable UUID id, @RequestBody Map<String, Object> updates) {
-        try {
-            Category updatedCategory = categoryService.patchCategoryById(id, updates);
+            CategoryDTO updatedCategory = categoryService.updateCategoryById(id, categoryDTO);
             Response response = new Response("Category updated successfully", updatedCategory, false);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
@@ -103,6 +77,19 @@ public class CategoryController {
             return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             Response response = new Response("Error deleting category", e.getMessage(), true);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<Response> patchCategoryById(@PathVariable UUID id, @RequestBody CategoryDTO categoryDTO) {
+        try {
+            CategoryDTO updatedCategory = categoryService.patchCategoryById(id, categoryDTO);
+            Response response = new Response("Category updated successfully", updatedCategory, false);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            Response response = new Response("Error updating category", e.getMessage(), true);
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

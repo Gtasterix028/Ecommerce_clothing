@@ -1,7 +1,9 @@
 package com.gtasterix.E_Commerce.service;
 
+import com.gtasterix.E_Commerce.dto.OrderItemDTO;
 import com.gtasterix.E_Commerce.exception.OrderItemNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
+import com.gtasterix.E_Commerce.mapper.OrderItemMapper;
 import com.gtasterix.E_Commerce.model.Order;
 import com.gtasterix.E_Commerce.model.OrderItem;
 import com.gtasterix.E_Commerce.model.Product;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderItemService {
@@ -26,54 +29,62 @@ public class OrderItemService {
     @Autowired
     private ProductRepository productRepository;
 
-    public OrderItem createOrderItem(OrderItem orderItem) {
-        try
-        {
-            Order order = orderRepository.findById(orderItem.getOrder().getOrderID())
-                    .orElseThrow(() -> new ValidationException("Order with ID " + orderItem.getOrder().getOrderID() + " not found"));
-            orderItem.setOrder(order);
-            Product product = productRepository.findById(orderItem.getProduct().getProductID())
-                    .orElseThrow(() -> new ValidationException("Product with ID " + orderItem.getProduct().getProductID() + " not found"));
-            orderItem.setProduct(product);
-            return orderItemRepository.save(orderItem);
-        }
-        catch (ValidationException e) {
+    public OrderItemDTO createOrderItem(OrderItemDTO orderItemDTO) {
+        try {
+            Order order = orderRepository.findById(orderItemDTO.getOrderID())
+                    .orElseThrow(() -> new ValidationException("Order with ID " + orderItemDTO.getOrderID() + " not found"));
+            Product product = productRepository.findById(orderItemDTO.getProductID())
+                    .orElseThrow(() -> new ValidationException("Product with ID " + orderItemDTO.getProductID() + " not found"));
+
+            OrderItem orderItem = OrderItemMapper.toEntity(orderItemDTO, order, product);
+            OrderItem createdOrderItem = orderItemRepository.save(orderItem);
+            return OrderItemMapper.toDTO(createdOrderItem);
+        } catch (ValidationException e) {
             throw new ValidationException("Failed to create order item: " + e.getMessage());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException("Unexpected error occurred while creating order item: " + e.getMessage());
         }
     }
 
-    public OrderItem getOrderItemById(UUID id) {
-        return orderItemRepository.findById(id)
+    public OrderItemDTO getOrderItemById(UUID id) {
+        OrderItem orderItem = orderItemRepository.findById(id)
                 .orElseThrow(() -> new OrderItemNotFoundException("OrderItem with ID " + id + " not found"));
+        return OrderItemMapper.toDTO(orderItem);
     }
 
-    public OrderItem updateOrderItem(UUID id, OrderItem orderItem) {
-        validateOrderItem(orderItem);
+    public OrderItemDTO updateOrderItem(UUID id, OrderItemDTO orderItemDTO) {
+        validateOrderItem(orderItemDTO);
         if (!orderItemRepository.existsById(id)) {
             throw new OrderItemNotFoundException("OrderItem with ID " + id + " not found");
         }
+
+        Order order = orderRepository.findById(orderItemDTO.getOrderID())
+                .orElseThrow(() -> new ValidationException("Order with ID " + orderItemDTO.getOrderID() + " not found"));
+        Product product = productRepository.findById(orderItemDTO.getProductID())
+                .orElseThrow(() -> new ValidationException("Product with ID " + orderItemDTO.getProductID() + " not found"));
+
+        OrderItem orderItem = OrderItemMapper.toEntity(orderItemDTO, order, product);
         orderItem.setOrderItemID(id);
-        return orderItemRepository.save(orderItem);
+        OrderItem updatedOrderItem = orderItemRepository.save(orderItem);
+        return OrderItemMapper.toDTO(updatedOrderItem);
     }
 
-    public List<OrderItem> getAllOrderItems() {
-        return orderItemRepository.findAll();
+    public List<OrderItemDTO> getAllOrderItems() {
+        List<OrderItem> orderItems = orderItemRepository.findAll();
+        return orderItems.stream().map(OrderItemMapper::toDTO).collect(Collectors.toList());
     }
 
-    private void validateOrderItem(OrderItem orderItem) {
-        if (orderItem.getOrder() == null) {
-            throw new ValidationException("Order cannot be null");
+    private void validateOrderItem(OrderItemDTO orderItemDTO) {
+        if (orderItemDTO.getOrderID() == null) {
+            throw new ValidationException("Order ID cannot be null");
         }
-        if (orderItem.getProduct() == null) {
-            throw new ValidationException("Product cannot be null");
+        if (orderItemDTO.getProductID() == null) {
+            throw new ValidationException("Product ID cannot be null");
         }
-        if (orderItem.getQuantity() == null || orderItem.getQuantity() <= 0) {
+        if (orderItemDTO.getQuantity() == null || orderItemDTO.getQuantity() <= 0) {
             throw new ValidationException("Quantity must be greater than zero");
         }
-        if (orderItem.getPrice() == null || orderItem.getPrice() <= 0) {
+        if (orderItemDTO.getPrice() == null || orderItemDTO.getPrice() <= 0) {
             throw new ValidationException("Price must be greater than zero");
         }
     }
@@ -85,44 +96,41 @@ public class OrderItemService {
         orderItemRepository.delete(existingOrderItem);
     }
 
-    public OrderItem patchOrderItem(UUID id, OrderItem orderItem) {
+    public OrderItemDTO patchOrderItem(UUID id, OrderItemDTO orderItemDTO) {
         try {
-
             OrderItem existingOrderItem = orderItemRepository.findById(id)
                     .orElseThrow(() -> new OrderItemNotFoundException("Order item with ID " + id + " not found"));
 
-
-            if (orderItem.getOrder() != null) {
-                Order order = orderRepository.findById(orderItem.getOrder().getOrderID())
-                        .orElseThrow(() -> new ValidationException("Order with ID " + orderItem.getOrder().getOrderID() + " not found"));
+            if (orderItemDTO.getOrderID() != null) {
+                Order order = orderRepository.findById(orderItemDTO.getOrderID())
+                        .orElseThrow(() -> new ValidationException("Order with ID " + orderItemDTO.getOrderID() + " not found"));
                 existingOrderItem.setOrder(order);
             }
 
-            if (orderItem.getProduct() != null) {
-                Product product = productRepository.findById(orderItem.getProduct().getProductID())
-                        .orElseThrow(() -> new ValidationException("Product with ID " + orderItem.getProduct().getProductID() + " not found"));
+            if (orderItemDTO.getProductID() != null) {
+                Product product = productRepository.findById(orderItemDTO.getProductID())
+                        .orElseThrow(() -> new ValidationException("Product with ID " + orderItemDTO.getProductID() + " not found"));
                 existingOrderItem.setProduct(product);
             }
 
-            if (orderItem.getQuantity() != null && orderItem.getQuantity() > 0) {
-                existingOrderItem.setQuantity(orderItem.getQuantity());
-            } else if (orderItem.getQuantity() != null) {
+            if (orderItemDTO.getQuantity() != null && orderItemDTO.getQuantity() > 0) {
+                existingOrderItem.setQuantity(orderItemDTO.getQuantity());
+            } else if (orderItemDTO.getQuantity() != null) {
                 throw new ValidationException("Quantity must be greater than 0");
             }
 
-            if (orderItem.getPrice() != null && orderItem.getPrice() > 0) {
-                existingOrderItem.setPrice(orderItem.getPrice());
-            } else if (orderItem.getPrice() != null) {
+            if (orderItemDTO.getPrice() != null && orderItemDTO.getPrice() > 0) {
+                existingOrderItem.setPrice(orderItemDTO.getPrice());
+            } else if (orderItemDTO.getPrice() != null) {
                 throw new ValidationException("Price must be greater than 0");
             }
 
-
-            return orderItemRepository.save(existingOrderItem);
+            OrderItem updatedOrderItem = orderItemRepository.save(existingOrderItem);
+            return OrderItemMapper.toDTO(updatedOrderItem);
         } catch (OrderItemNotFoundException | ValidationException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Unexpected error occurred while patching order item: " + e.getMessage());
         }
     }
-
 }

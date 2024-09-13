@@ -1,9 +1,9 @@
 package com.gtasterix.E_Commerce.controller;
 
 import com.gtasterix.E_Commerce.Util.Response;
+import com.gtasterix.E_Commerce.dto.CartItemDTO;
 import com.gtasterix.E_Commerce.exception.CartItemNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
-import com.gtasterix.E_Commerce.model.CartItem;
 import com.gtasterix.E_Commerce.service.CartItemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,50 +21,70 @@ public class CartItemController {
     private CartItemService cartItemService;
 
     @PostMapping
-    public ResponseEntity<Response> createCartItem(@RequestBody CartItem cartItem) {
+    public ResponseEntity<Response> createCartItem(@RequestBody CartItemDTO cartItemDTO) {
         try {
-            CartItem createdCartItem = cartItemService.createCartItem(cartItem);
-            return ResponseEntity.status(HttpStatus.CREATED).body(new Response("Cart item created successfully", createdCartItem, false));
+            CartItemDTO createdCartItem = cartItemService.createCartItem(cartItemDTO);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new Response("CartItem created successfully", createdCartItem, false));
         } catch (ValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(e.getMessage(), "Validation error", true));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Response(e.getMessage(), null, true));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response("An error occurred", e.getMessage(), true));
         }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Response> getCartItemById(@PathVariable UUID id) {
         try {
-            CartItem cartItem = cartItemService.getCartItemById(id);
-            return ResponseEntity.ok(new Response("Cart item retrieved successfully", cartItem, false));
+            CartItemDTO cartItem = cartItemService.getCartItemById(id);
+            return ResponseEntity.ok(new Response("CartItem retrieved successfully", cartItem, false));
         } catch (CartItemNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(e.getMessage(), "Cart item not found", true));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Response(e.getMessage(), null, true));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response("An error occurred", e.getMessage(), true));
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<Response> getAllCartItems() {
+        try {
+            List<CartItemDTO> cartItems = cartItemService.getAllCartItems();
+            return ResponseEntity.ok(new Response("CartItems retrieved successfully", cartItems, false));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response("An error occurred", e.getMessage(), true));
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Response> updateCartItem(@PathVariable UUID id, @RequestBody CartItem cartItem) {
+    public ResponseEntity<Response> updateCartItem(@PathVariable UUID id, @RequestBody CartItemDTO cartItemDTO) {
         try {
-            CartItem updatedCartItem = cartItemService.updateCartItem(id, cartItem);
-            return ResponseEntity.ok(new Response("Cart item updated successfully", updatedCartItem, false));
+            CartItemDTO updatedCartItem = cartItemService.updateCartItem(id, cartItemDTO);
+            return ResponseEntity.ok(new Response("CartItem updated successfully", updatedCartItem, false));
         } catch (CartItemNotFoundException | ValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(e.getMessage(), "Validation or not found error", true));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Response(e.getMessage(), null, true));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response("An error occurred", e.getMessage(), true));
         }
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Response> patchCartItemById(@PathVariable UUID id, @RequestBody CartItem cartItem) {
+    public ResponseEntity<Response> patchCartItemById(@PathVariable UUID id, @RequestBody CartItemDTO cartItemDTO) {
         try {
-            CartItem updatedCartItem = cartItemService.patchCartItemById(id, cartItem);
-            return ResponseEntity.ok(new Response("Cart item updated successfully", updatedCartItem, false));
+            CartItemDTO updatedCartItem = cartItemService.patchCartItemById(id, cartItemDTO);
+            return ResponseEntity.ok(new Response("CartItem updated successfully", updatedCartItem, false));
         } catch (CartItemNotFoundException | ValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(e.getMessage(), "Validation or not found error", true));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Response(e.getMessage(), null, true));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response("An error occurred", e.getMessage(), true));
         }
     }
 
@@ -72,21 +92,13 @@ public class CartItemController {
     public ResponseEntity<Response> deleteCartItemById(@PathVariable UUID id) {
         try {
             cartItemService.deleteCartItemById(id);
-            return ResponseEntity.ok(new Response("Cart item deleted successfully", "Cart item erased", false));
+            return ResponseEntity.ok(new Response("CartItem deleted successfully", null, false));
         } catch (CartItemNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(e.getMessage(), "Cart item not found", true));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Response(e.getMessage(), null, true));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
-        }
-    }
-
-    @GetMapping
-    public ResponseEntity<Response> getAllCartItems() {
-        try {
-            List<CartItem> cartItems = cartItemService.getAllCartItems();
-            return ResponseEntity.ok(new Response("Cart items retrieved successfully", cartItems, false));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response("An error occurred", e.getMessage(), true));
         }
     }
 }

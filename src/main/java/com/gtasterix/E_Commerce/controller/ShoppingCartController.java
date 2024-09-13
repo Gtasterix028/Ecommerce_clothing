@@ -1,9 +1,9 @@
 package com.gtasterix.E_Commerce.controller;
 
 import com.gtasterix.E_Commerce.Util.Response;
+import com.gtasterix.E_Commerce.dto.ShoppingCartDTO;
 import com.gtasterix.E_Commerce.exception.ShoppingCartNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
-import com.gtasterix.E_Commerce.model.ShoppingCart;
 import com.gtasterix.E_Commerce.service.ShoppingCartService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,9 +21,9 @@ public class ShoppingCartController {
     private ShoppingCartService shoppingCartService;
 
     @PostMapping
-    public ResponseEntity<Response> createShoppingCart(@RequestBody ShoppingCart shoppingCart) {
+    public ResponseEntity<Response> createShoppingCart(@RequestBody ShoppingCartDTO shoppingCartDTO) {
         try {
-            ShoppingCart createdShoppingCart = shoppingCartService.createShoppingCart(shoppingCart);
+            ShoppingCartDTO createdShoppingCart = shoppingCartService.createShoppingCart(shoppingCartDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(new Response("Shopping cart created successfully", createdShoppingCart, false));
         } catch (ValidationException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(e.getMessage(), "An error occurred", true));
@@ -35,7 +35,7 @@ public class ShoppingCartController {
     @GetMapping("/{id}")
     public ResponseEntity<Response> getShoppingCartById(@PathVariable UUID id) {
         try {
-            ShoppingCart shoppingCart = shoppingCartService.getShoppingCartById(id);
+            ShoppingCartDTO shoppingCart = shoppingCartService.getShoppingCartById(id);
             return ResponseEntity.ok(new Response("Shopping cart retrieved successfully", shoppingCart, false));
         } catch (ShoppingCartNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(e.getMessage(), "An error occurred", true));
@@ -45,9 +45,9 @@ public class ShoppingCartController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Response> updateShoppingCart(@PathVariable UUID id, @RequestBody ShoppingCart shoppingCart) {
+    public ResponseEntity<Response> updateShoppingCart(@PathVariable UUID id, @RequestBody ShoppingCartDTO shoppingCartDTO) {
         try {
-            ShoppingCart updatedShoppingCart = shoppingCartService.updateShoppingCart(id, shoppingCart);
+            ShoppingCartDTO updatedShoppingCart = shoppingCartService.updateShoppingCart(id, shoppingCartDTO);
             return ResponseEntity.ok(new Response("Shopping cart updated successfully", updatedShoppingCart, false));
         } catch (ShoppingCartNotFoundException | ValidationException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(e.getMessage(), "An error occurred", true));
@@ -59,7 +59,7 @@ public class ShoppingCartController {
     @GetMapping
     public ResponseEntity<Response> getAllShoppingCarts() {
         try {
-            List<ShoppingCart> shoppingCarts = shoppingCartService.getAllShoppingCarts();
+            List<ShoppingCartDTO> shoppingCarts = shoppingCartService.getAllShoppingCarts();
             return ResponseEntity.ok(new Response("Shopping carts retrieved successfully", shoppingCarts, false));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
@@ -67,9 +67,9 @@ public class ShoppingCartController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Response> patchShoppingCartById(@PathVariable UUID id, @RequestBody ShoppingCart shoppingCart) {
+    public ResponseEntity<Response> patchShoppingCartById(@PathVariable UUID id, @RequestBody ShoppingCartDTO shoppingCartDTO) {
         try {
-            ShoppingCart updatedShoppingCart = shoppingCartService.patchShoppingCartById(id, shoppingCart);
+            ShoppingCartDTO updatedShoppingCart = shoppingCartService.patchShoppingCartById(id, shoppingCartDTO);
             return ResponseEntity.ok(new Response("Shopping cart updated successfully", updatedShoppingCart, false));
         } catch (ShoppingCartNotFoundException | ValidationException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(e.getMessage(), "An error occurred", true));
