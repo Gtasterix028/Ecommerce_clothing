@@ -1,7 +1,9 @@
 package com.gtasterix.E_Commerce.service;
 
+import com.gtasterix.E_Commerce.dto.ReviewDTO;
 import com.gtasterix.E_Commerce.exception.ReviewNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
+import com.gtasterix.E_Commerce.mapper.ReviewMapper;
 import com.gtasterix.E_Commerce.model.Product;
 import com.gtasterix.E_Commerce.model.Review;
 import com.gtasterix.E_Commerce.model.User;
@@ -26,76 +28,89 @@ public class ReviewService {
     @Autowired
     private UserRepository userRepository;
 
-    public Review createReview(Review review){
-        try
-        {
-            validateReview(review);
-            Product product = productRepository.findById(review.getProduct().getProductID())
-                    .orElseThrow(() -> new ValidationException("Product with ID " + review.getProduct().getProductID() + " not found"));
-            review.setProduct(product);
-            User user = userRepository.findById(review.getUser().getUserID())
-                    .orElseThrow(() -> new ValidationException("User with ID " + review.getUser().getUserID() + " not found"));
-            review.setUser(user);
-            return reviewRepository.save(review);
-        }
-        catch (ValidationException e) {
-            throw new ValidationException("Failed to create review of user : " + e.getMessage());
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Unexpected error occurred while creating review of user: " + e.getMessage());
+    public ReviewDTO createReview(ReviewDTO reviewDTO) {
+        try {
+            validateReview(reviewDTO);
+            Product product = productRepository.findById(reviewDTO.getProductID())
+                    .orElseThrow(() -> new ValidationException("Product with ID " + reviewDTO.getProductID() + " not found"));
+            User user = userRepository.findById(reviewDTO.getUserID())
+                    .orElseThrow(() -> new ValidationException("User with ID " + reviewDTO.getUserID() + " not found"));
+            Review review = ReviewMapper.toEntity(reviewDTO, product, user);
+            Review savedReview = reviewRepository.save(review);
+            return ReviewMapper.toDTO(savedReview);
+        } catch (ValidationException e) {
+            throw new ValidationException("Failed to create review: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected error occurred while creating review: " + e.getMessage());
         }
     }
 
-
-    public Review getReviewById(UUID id) {
-        return reviewRepository.findById(id)
+    public ReviewDTO getReviewById(UUID id) {
+        Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new ReviewNotFoundException("Review with ID " + id + " not found"));
+        return ReviewMapper.toDTO(review);
     }
 
-    public Review updateReview(UUID id, Review review) {
-        validateReview(review);
+    public ReviewDTO updateReview(UUID id, ReviewDTO reviewDTO) {
+        validateReview(reviewDTO);
         if (!reviewRepository.existsById(id)) {
             throw new ReviewNotFoundException("Review with ID " + id + " not found");
         }
+        Product product = productRepository.findById(reviewDTO.getProductID())
+                .orElseThrow(() -> new ValidationException("Product with ID " + reviewDTO.getProductID() + " not found"));
+        User user = userRepository.findById(reviewDTO.getUserID())
+                .orElseThrow(() -> new ValidationException("User with ID " + reviewDTO.getUserID() + " not found"));
+        Review review = ReviewMapper.toEntity(reviewDTO, product, user);
         review.setReviewID(id);
-        return reviewRepository.save(review);
+        Review updatedReview = reviewRepository.save(review);
+        return ReviewMapper.toDTO(updatedReview);
     }
 
-    public List<Review> getAllReviews() {
-        return reviewRepository.findAll();
+    public List<ReviewDTO> getAllReviews() {
+        List<Review> reviews = reviewRepository.findAll();
+        return reviews.stream().map(ReviewMapper::toDTO).toList();
     }
 
-    private void validateReview(Review review) {
-        if (review.getProduct() == null) {
-            throw new ValidationException("Product cannot be null");
+    private void validateReview(ReviewDTO reviewDTO) {
+        if (reviewDTO.getProductID() == null) {
+            throw new ValidationException("Product ID cannot be null");
         }
-        if (review.getUser() == null) {
-            throw new ValidationException("User cannot be null");
+        if (reviewDTO.getUserID() == null) {
+            throw new ValidationException("User ID cannot be null");
         }
-        if (review.getRating() == null || review.getRating() < 1 || review.getRating() > 5) {
+        if (reviewDTO.getRating() == null || reviewDTO.getRating() < 1 || reviewDTO.getRating() > 5) {
             throw new ValidationException("Rating must be between 1 and 5");
         }
-        if (review.getReviewDate() == null) {
+        if (reviewDTO.getReviewDate() == null) {
             throw new ValidationException("Review date cannot be null");
         }
     }
 
-    public Review patchReviewById(UUID id, Review review) {
+    public ReviewDTO patchReviewById(UUID id, ReviewDTO reviewDTO) {
         Review existingReview = reviewRepository.findById(id)
                 .orElseThrow(() -> new ReviewNotFoundException("Review with ID " + id + " not found"));
 
-        if (review.getProduct() != null) existingReview.setProduct(review.getProduct());
-        if (review.getUser() != null) existingReview.setUser(review.getUser());
-        if (review.getRating() != null) {
-            if (review.getRating() < 1 || review.getRating() > 5) {
+        if (reviewDTO.getProductID() != null) {
+            Product product = productRepository.findById(reviewDTO.getProductID())
+                    .orElseThrow(() -> new ValidationException("Product with ID " + reviewDTO.getProductID() + " not found"));
+            existingReview.setProduct(product);
+        }
+        if (reviewDTO.getUserID() != null) {
+            User user = userRepository.findById(reviewDTO.getUserID())
+                    .orElseThrow(() -> new ValidationException("User with ID " + reviewDTO.getUserID() + " not found"));
+            existingReview.setUser(user);
+        }
+        if (reviewDTO.getRating() != null) {
+            if (reviewDTO.getRating() < 1 || reviewDTO.getRating() > 5) {
                 throw new ValidationException("Rating must be between 1 and 5");
             }
-            existingReview.setRating(review.getRating());
+            existingReview.setRating(reviewDTO.getRating());
         }
-        if (review.getComment() != null) existingReview.setComment(review.getComment());
-        if (review.getReviewDate() != null) existingReview.setReviewDate(review.getReviewDate());
+        if (reviewDTO.getComment() != null) existingReview.setComment(reviewDTO.getComment());
+        if (reviewDTO.getReviewDate() != null) existingReview.setReviewDate(reviewDTO.getReviewDate());
 
-        return reviewRepository.save(existingReview);
+        Review updatedReview = reviewRepository.save(existingReview);
+        return ReviewMapper.toDTO(updatedReview);
     }
 
     public void deleteReviewById(UUID id) {
