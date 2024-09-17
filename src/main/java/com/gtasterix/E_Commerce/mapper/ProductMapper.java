@@ -18,6 +18,8 @@ public class ProductMapper {
         dto.setVendorID(product.getVendor().getVendorID());
         dto.setVendorName(product.getVendor().getVendorName());
         dto.setImageURL(product.getImageURL());
+        dto.setColor(product.getColor());
+        dto.setSize(product.getSize());
         return dto;
     }
 
@@ -31,6 +33,8 @@ public class ProductMapper {
         product.setCategory(category);
         product.setVendor(vendor);
         product.setImageURL(dto.getImageURL());
+        product.setColor(dto.getColor());
+        product.setSize(dto.getSize());
         return product;
     }
 }

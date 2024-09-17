@@ -1,16 +1,15 @@
 package com.gtasterix.E_Commerce.service;
 
 import com.gtasterix.E_Commerce.dto.ProductDTO;
+import com.gtasterix.E_Commerce.exception.NoProductFoundException;
 import com.gtasterix.E_Commerce.exception.ProductNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
 import com.gtasterix.E_Commerce.mapper.ProductMapper;
 import com.gtasterix.E_Commerce.model.Category;
 import com.gtasterix.E_Commerce.model.Product;
-import com.gtasterix.E_Commerce.model.User;
 import com.gtasterix.E_Commerce.model.Vendor;
 import com.gtasterix.E_Commerce.repository.CategoryRepository;
 import com.gtasterix.E_Commerce.repository.ProductRepository;
-import com.gtasterix.E_Commerce.repository.UserRepository;
 import com.gtasterix.E_Commerce.repository.VendorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -91,6 +90,18 @@ public class ProductService {
             }
             existingProduct.setStockQuantity(productDTO.getStockQuantity());
         }
+        if (productDTO.getColor() != null) {
+            if (productDTO.getColor().isEmpty()) {
+                throw new ValidationException("Product color cannot be empty");
+            }
+            existingProduct.setColor(productDTO.getColor());
+        }
+        if (productDTO.getSize() != null) {
+            if (productDTO.getSize().isEmpty()) {
+                throw new ValidationException("Product size cannot be empty");
+            }
+            existingProduct.setSize(productDTO.getSize());
+        }
         if (productDTO.getCategoryID() != null) {
             Category category = categoryRepository.findById(productDTO.getCategoryID())
                     .orElseThrow(() -> new ValidationException("Category with ID " + productDTO.getCategoryID() + " does not exist"));
@@ -107,16 +118,12 @@ public class ProductService {
         return ProductMapper.toDTO(updatedProduct);
     }
 
-//    public void deleteProductById(UUID productId) {
-//        if (!productRepository.existsById(productId)) {
-//            throw new ProductNotFoundException("Product with ID " + productId + " not found");
-//        }
-//        productRepository.deleteById(productId);
-//    }
+    public void deleteProductById(UUID productId) {
+        Product existingProduct = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException("Product with ID " + productId + " not found"));
 
-
-
-
+        productRepository.delete(existingProduct);
+    }
 
     private void validateProduct(Product product) {
         if (product.getProductName() == null || product.getProductName().isEmpty()) {
@@ -130,42 +137,15 @@ public class ProductService {
         }
     }
 
-    public Product patchProductById(UUID id, Product product) {
-        Product existingProduct = productRepository.findById(id)
-                .orElseThrow(() -> new ProductNotFoundException("Product with ID " + id + " not found"));
+    public List<ProductDTO> filterProducts(UUID categoryID, UUID vendorID, Double minPrice, Double maxPrice, String color, String size, String name) {
+        List<Product> filteredProducts = productRepository.filterProducts(categoryID, vendorID, minPrice, maxPrice, color, size, name);
 
-        if (product.getProductName() != null) existingProduct.setProductName(product.getProductName());
-        if (product.getDescription() != null) existingProduct.setDescription(product.getDescription());
-        if (product.getPrice() != null) {
-            if (product.getPrice() <= 0) {
-                throw new ValidationException("Product price must be greater than zero");
-            }
-            existingProduct.setPrice(product.getPrice());
+        if (filteredProducts.isEmpty()) {
+            throw new NoProductFoundException("No products match the filter criteria");
         }
-        if (product.getStockQuantity() != null) {
-            if (product.getStockQuantity() < 0) {
-                throw new ValidationException("Product stock quantity cannot be negative");
-            }
-            existingProduct.setStockQuantity(product.getStockQuantity());
-        }
-        if (product.getCategory() != null) {
 
-            existingProduct.setCategory(product.getCategory());
-        }
-        if (product.getVendor() != null) {
-
-            existingProduct.setVendor(product.getVendor());
-        }
-        if (product.getImageURL() != null) existingProduct.setImageURL(product.getImageURL());
-
-        return productRepository.save(existingProduct);
-    }
-
-
-    public void deleteProductById(UUID productId) {
-        Product existingProduct = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException("Product with ID " + productId + " not found"));
-
-        productRepository.delete(existingProduct);
+        return filteredProducts.stream()
+                .map(ProductMapper::toDTO)
+                .collect(Collectors.toList());
     }
 }

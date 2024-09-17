@@ -16,6 +16,8 @@ public class ProductDTO {
     private UUID vendorID;
     private String vendorName;
     private String imageURL;
+    private String color;
+    private String size;
 
 
 }

@@ -24,6 +24,12 @@ public class Product {
     @Column(nullable = false)
     private Integer stockQuantity;
 
+    @Column(nullable = false)
+    private String color;
+
+    @Column(nullable = false)
+    private String size;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "categoryID", nullable = false)
     private Category category;
