@@ -17,7 +17,7 @@ public class ProductMapper {
         dto.setCategoryName(product.getCategory().getCategoryName());
         dto.setVendorID(product.getVendor().getVendorID());
         dto.setVendorName(product.getVendor().getVendorName());
-        dto.setImageURL(product.getImageURL());
+        dto.setImageURLs(product.getImageURLs());
         dto.setColor(product.getColor());
         dto.setSize(product.getSize());
         return dto;
@@ -32,7 +32,7 @@ public class ProductMapper {
         product.setStockQuantity(dto.getStockQuantity());
         product.setCategory(category);
         product.setVendor(vendor);
-        product.setImageURL(dto.getImageURL());
+        product.setImageURLs(dto.getImageURLs());
         product.setColor(dto.getColor());
         product.setSize(dto.getSize());
         return product;

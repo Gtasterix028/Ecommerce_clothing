@@ -3,6 +3,7 @@ package com.gtasterix.E_Commerce.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -38,5 +39,9 @@ public class Product {
     @JoinColumn(name = "vendorID", nullable = false)
     private Vendor vendor;
 
-    private String imageURL;
+    @ElementCollection@CollectionTable(name = "product_images",
+            joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "image_url", length=2048)
+    private List<String> imageURLs;
+
 }

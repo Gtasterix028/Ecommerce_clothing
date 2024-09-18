@@ -2,6 +2,7 @@ package com.gtasterix.E_Commerce.dto;
 
 import lombok.Data;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -15,7 +16,7 @@ public class ProductDTO {
     private String categoryName;
     private UUID vendorID;
     private String vendorName;
-    private String imageURL;
+    private List<String> imageURLs;
     private String color;
     private String size;
 

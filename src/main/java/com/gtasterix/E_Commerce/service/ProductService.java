@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -90,18 +89,8 @@ public class ProductService {
             }
             existingProduct.setStockQuantity(productDTO.getStockQuantity());
         }
-        if (productDTO.getColor() != null) {
-            if (productDTO.getColor().isEmpty()) {
-                throw new ValidationException("Product color cannot be empty");
-            }
-            existingProduct.setColor(productDTO.getColor());
-        }
-        if (productDTO.getSize() != null) {
-            if (productDTO.getSize().isEmpty()) {
-                throw new ValidationException("Product size cannot be empty");
-            }
-            existingProduct.setSize(productDTO.getSize());
-        }
+        if (productDTO.getColor() != null) existingProduct.setColor(productDTO.getColor());
+        if (productDTO.getSize() != null) existingProduct.setSize(productDTO.getSize());
         if (productDTO.getCategoryID() != null) {
             Category category = categoryRepository.findById(productDTO.getCategoryID())
                     .orElseThrow(() -> new ValidationException("Category with ID " + productDTO.getCategoryID() + " does not exist"));
@@ -112,7 +101,7 @@ public class ProductService {
                     .orElseThrow(() -> new ValidationException("Vendor with ID " + productDTO.getVendorID() + " does not exist"));
             existingProduct.setVendor(vendor);
         }
-        if (productDTO.getImageURL() != null) existingProduct.setImageURL(productDTO.getImageURL());
+        if (productDTO.getImageURLs() != null) existingProduct.setImageURLs(productDTO.getImageURLs());
 
         Product updatedProduct = productRepository.save(existingProduct);
         return ProductMapper.toDTO(updatedProduct);
@@ -137,15 +126,5 @@ public class ProductService {
         }
     }
 
-    public List<ProductDTO> filterProducts(UUID categoryID, UUID vendorID, Double minPrice, Double maxPrice, String color, String size, String name) {
-        List<Product> filteredProducts = productRepository.filterProducts(categoryID, vendorID, minPrice, maxPrice, color, size, name);
 
-        if (filteredProducts.isEmpty()) {
-            throw new NoProductFoundException("No products match the filter criteria");
-        }
-
-        return filteredProducts.stream()
-                .map(ProductMapper::toDTO)
-                .collect(Collectors.toList());
-    }
-}
+    public List<ProductDTO> filterProducts(UUID categoryID, UUID vendorID, Double minPrice, Double maxPrice, String color, String size, String name) { List<Product> filteredProducts = productRepository.filterProducts(categoryID, vendorID, minPrice, maxPrice, color, size, name); if (filteredProducts.isEmpty()) { throw new NoProductFoundException("No products match the filter criteria"); } return filteredProducts.stream() .map(ProductMapper::toDTO) .collect(Collectors.toList()); } }
