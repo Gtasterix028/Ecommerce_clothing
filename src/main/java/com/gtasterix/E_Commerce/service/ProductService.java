@@ -127,4 +127,13 @@ public class ProductService {
     }
 
 
-    public List<ProductDTO> filterProducts(UUID categoryID, UUID vendorID, Double minPrice, Double maxPrice, String color, String size, String name) { List<Product> filteredProducts = productRepository.filterProducts(categoryID, vendorID, minPrice, maxPrice, color, size, name); if (filteredProducts.isEmpty()) { throw new NoProductFoundException("No products match the filter criteria"); } return filteredProducts.stream() .map(ProductMapper::toDTO) .collect(Collectors.toList()); } }
+    public List<ProductDTO>
+    filterProducts(UUID categoryID, UUID vendorID, Double minPrice, Double maxPrice, String color, String size, String name) {
+        List<Product> filteredProducts = productRepository.filterProducts(categoryID, vendorID, minPrice, maxPrice, color, size, name);
+        if (filteredProducts.isEmpty()) {
+            throw new NoProductFoundException("No products match the filter criteria");
+        }
+        return
+                filteredProducts.stream().map(ProductMapper::toDTO).collect(Collectors.toList());
+    }
+}
