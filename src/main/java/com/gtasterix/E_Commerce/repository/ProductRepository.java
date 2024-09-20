@@ -15,6 +15,10 @@ public interface ProductRepository extends JpaRepository<Product, UUID>,ProductC
 
     Optional<Product> findByProductName(String productName);
 
-
+    @Query("SELECT p FROM Product p WHERE p.productName = :productName AND p.color = :color")
+    List<Product> findByProductNameAndColor(@Param("productName") String productName, @Param("color") String color);
 }
+
+
+
 

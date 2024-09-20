@@ -14,6 +14,7 @@ import com.gtasterix.E_Commerce.repository.VendorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -127,8 +128,7 @@ public class ProductService {
     }
 
 
-    public List<ProductDTO>
-    filterProducts(UUID categoryID, UUID vendorID, Double minPrice, Double maxPrice, String color, String size, String name) {
+    public List<ProductDTO> filterProducts(UUID categoryID, UUID vendorID, Double minPrice, Double maxPrice, String color, String size, String name) {
         List<Product> filteredProducts = productRepository.filterProducts(categoryID, vendorID, minPrice, maxPrice, color, size, name);
         if (filteredProducts.isEmpty()) {
             throw new NoProductFoundException("No products match the filter criteria");
@@ -136,4 +136,29 @@ public class ProductService {
         return
                 filteredProducts.stream().map(ProductMapper::toDTO).collect(Collectors.toList());
     }
+
+    public ProductDTO getProductByName(String name) {
+        Product product = productRepository.findByProductName(name)
+                .orElseThrow(() -> new ProductNotFoundException("Product with name " + name + " not found"));
+        return ProductMapper.toDTO(product);
+    }
+
+
+    public List<String> getImageURLsByNameAndColor(String productName, String color) {
+        List<Product> products = productRepository.findByProductNameAndColor(productName, color);
+
+        if (products.isEmpty()) {
+            throw new NoProductFoundException("No products match the provided name and color");
+        }
+
+        List<String> imageURLs = new ArrayList<>();
+        for (Product product : products) {
+            imageURLs.addAll(product.getImageURLs());
+        }
+
+        return imageURLs;
+    }
+
+
+
 }

@@ -115,4 +115,28 @@ public class ProductController {
                     .body(new Response("An error occurred", e.getMessage(), true));
         }
     }
+
+    @GetMapping("/name/{name}")
+    public ResponseEntity<Response> getProductByName(@PathVariable String name) {
+        try {
+            ProductDTO product = productService.getProductByName(name);
+            return ResponseEntity.ok(new Response("Product retrieved successfully", product, false));
+        } catch (ProductNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(e.getMessage(), null, true));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
+        }
+    }
+
+    @GetMapping("/image-urls/{name}/{color}")
+    public ResponseEntity<Response> getImageURLsByNameAndColor(@PathVariable String name, @PathVariable String color) {
+        try {
+            List<String> imageURLs = productService.getImageURLsByNameAndColor(name, color);
+            return ResponseEntity.ok(new Response("Image URLs retrieved successfully", imageURLs, false));
+        } catch (NoProductFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(e.getMessage(), null, true));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
+        }
+    }
 }
