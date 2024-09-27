@@ -151,13 +151,22 @@ public class ProductService {
             throw new NoProductFoundException("No products match the provided name and color");
         }
 
-        List<String> imageURLs = new ArrayList<>();
+
+        List<ProductDTO> productDTOs = new ArrayList<>();
         for (Product product : products) {
-            imageURLs.addAll(product.getImageURLs());
+            ProductDTO productDTO = ProductMapper.toDTO(product);
+            productDTOs.add(productDTO);
+        }
+
+
+        List<String> imageURLs = new ArrayList<>();
+        for (ProductDTO productDTO : productDTOs) {
+            imageURLs.addAll(productDTO.getImageURLs());
         }
 
         return imageURLs;
     }
+
 
 
 

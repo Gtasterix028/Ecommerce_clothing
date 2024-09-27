@@ -127,7 +127,6 @@ public class ProductController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
         }
     }
-
     @GetMapping("/image-urls/{name}/{color}")
     public ResponseEntity<Response> getImageURLsByNameAndColor(@PathVariable String name, @PathVariable String color) {
         try {
@@ -139,4 +138,5 @@ public class ProductController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
         }
     }
+
 }
