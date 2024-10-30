@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,14 +22,17 @@ public class VendorController {
     private VendorService vendorService;
 
     @PostMapping
-    public ResponseEntity<Response> createVendor(@RequestBody VendorDTO vendorDTO) {
+    public ResponseEntity<Response> createVendor(@Valid @RequestBody VendorDTO vendorDTO) {
         try {
             Vendor createdVendor = vendorService.createVendor(vendorDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(new Response("Vendor created successfully", createdVendor, false));
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new Response("Vendor created successfully", createdVendor, false));
         } catch (ValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(e.getMessage(), "An error occurred", true));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Response(e.getMessage(), "An error occurred", true));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response("An error occurred", e.getMessage(), true));
         }
     }
 
@@ -38,31 +42,36 @@ public class VendorController {
             Vendor vendor = vendorService.getVendorById(id);
             return ResponseEntity.ok(new Response("Vendor retrieved successfully", vendor, false));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response("Vendor with ID " + id + " not found", e.getMessage(), true));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Response("Vendor with ID " + id + " not found", e.getMessage(), true));
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Response> updateVendor(@PathVariable UUID id, @RequestBody VendorDTO vendorDTO) {
+    public ResponseEntity<Response> updateVendor(@PathVariable UUID id, @Valid @RequestBody VendorDTO vendorDTO) {
         try {
             Vendor updatedVendor = vendorService.updateVendor(id, vendorDTO);
             return ResponseEntity.ok(new Response("Vendor updated successfully", updatedVendor, false));
         } catch (ValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(e.getMessage(), "An error occurred", true));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Response(e.getMessage(), "An error occurred", true));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response("An error occurred", e.getMessage(), true));
         }
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Response> patchVendorById(@PathVariable UUID id, @RequestBody VendorDTO vendorDTO) {
+    public ResponseEntity<Response> patchVendorById(@PathVariable UUID id, @Valid @RequestBody VendorDTO vendorDTO) {
         try {
             Vendor updatedVendor = vendorService.patchVendorById(id, vendorDTO);
             return ResponseEntity.ok(new Response("Vendor updated successfully", updatedVendor, false));
         } catch (ValidationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(e.getMessage(), "An error occurred", true));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Response(e.getMessage(), "An error occurred", true));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response("An error occurred", e.getMessage(), true));
         }
     }
 
@@ -72,7 +81,8 @@ public class VendorController {
             vendorService.deleteVendorById(id);
             return ResponseEntity.ok(new Response("Vendor deleted successfully", "Vendor erased", false));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response("Vendor with ID " + id + " not found", e.getMessage(), true));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Response("Vendor with ID " + id + " not found", e.getMessage(), true));
         }
     }
 
@@ -82,7 +92,8 @@ public class VendorController {
             List<Vendor> vendors = vendorService.getAllVendors();
             return ResponseEntity.ok(new Response("Vendors retrieved successfully", vendors, false));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response("An error occurred", e.getMessage(), true));
         }
     }
 }

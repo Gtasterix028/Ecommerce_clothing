@@ -1,19 +1,20 @@
-package com.gtasterix.E_Commerce.repository;
+package com.gtasterix.E_Commerce.repository.impl;
 
 import com.gtasterix.E_Commerce.model.Product;
+import com.gtasterix.E_Commerce.model.Variant;
+import com.gtasterix.E_Commerce.repository.ProductCustomRepository;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.*;
-import org.springframework.stereotype.Repository;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
-@Repository
 public class ProductCustomRepositoryImpl implements ProductCustomRepository {
 
-    @PersistenceContext
+    @Autowired
     private EntityManager entityManager;
 
     @Override
@@ -21,41 +22,39 @@ public class ProductCustomRepositoryImpl implements ProductCustomRepository {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Product> cq = cb.createQuery(Product.class);
         Root<Product> product = cq.from(Product.class);
+        Join<Product, Variant> variantJoin = product.join("variants", JoinType.LEFT);
 
-        // Create a list of predicates (conditions) based on the optional filter parameters
         List<Predicate> predicates = new ArrayList<>();
 
         if (categoryID != null) {
             predicates.add(cb.equal(product.get("category").get("categoryID"), categoryID));
         }
-
         if (vendorID != null) {
             predicates.add(cb.equal(product.get("vendor").get("vendorID"), vendorID));
         }
-
         if (minPrice != null) {
-            predicates.add(cb.greaterThanOrEqualTo(product.get("price"), minPrice));
+            predicates.add(cb.greaterThanOrEqualTo(variantJoin.get("price"), minPrice));
         }
-
         if (maxPrice != null) {
-            predicates.add(cb.lessThanOrEqualTo(product.get("price"), maxPrice));
+            predicates.add(cb.lessThanOrEqualTo(variantJoin.get("price"), maxPrice));
         }
-
         if (color != null) {
-            predicates.add(cb.equal(product.get("color"), color));
+            predicates.add(cb.equal(variantJoin.get("color"), color));
         }
-
         if (size != null) {
-            predicates.add(cb.equal(product.get("size"), size));
+            predicates.add(cb.equal(variantJoin.get("size"), size));
         }
-
         if (name != null) {
-            predicates.add(cb.like(cb.lower(product.get("productName")), "%" + name.toLowerCase() + "%"));
+            predicates.add(cb.like(product.get("productName"), "%" + name + "%"));
         }
 
-        // Apply predicates (conditions) to the query
         cq.where(predicates.toArray(new Predicate[0]));
 
         return entityManager.createQuery(cq).getResultList();
+    }
+
+    @Override
+    public Optional<Product> filterProduct(UUID categoryID, UUID vendorID, Double minPrice, Double maxPrice, String color, String size, String name) {
+        return Optional.empty();
     }
 }

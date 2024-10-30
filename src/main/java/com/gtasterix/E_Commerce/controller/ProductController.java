@@ -2,6 +2,7 @@ package com.gtasterix.E_Commerce.controller;
 
 import com.gtasterix.E_Commerce.Util.Response;
 import com.gtasterix.E_Commerce.dto.ProductDTO;
+import com.gtasterix.E_Commerce.dto.VariantDTO;
 import com.gtasterix.E_Commerce.exception.NoProductFoundException;
 import com.gtasterix.E_Commerce.exception.ProductNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
@@ -84,9 +85,10 @@ public class ProductController {
         }
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<Response> getAllProducts() {
         try {
+
             List<ProductDTO> products = productService.getAllProducts();
             return ResponseEntity.ok(new Response("Products retrieved successfully", products, false));
         } catch (Exception e) {
@@ -94,27 +96,27 @@ public class ProductController {
         }
     }
 
-    @GetMapping("/api/products/filter")
-    public ResponseEntity<Response> filterProducts(
-            @RequestParam(required = false) UUID categoryID,
-            @RequestParam(required = false) UUID vendorID,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false) String color,
-            @RequestParam(required = false) String size,
-            @RequestParam(required = false) String name) {
-
-        try {
-            List<ProductDTO> products = productService.filterProducts(categoryID, vendorID, minPrice, maxPrice, color, size, name);
-            return ResponseEntity.ok(new Response("Filtered products retrieved successfully", products, false));
-        } catch (NoProductFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new Response(e.getMessage(), null, true));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new Response("An error occurred", e.getMessage(), true));
-        }
-    }
+//    @GetMapping("/filter")
+//    public ResponseEntity<?> filterProducts(
+//            @RequestParam(required = false) UUID categoryID,
+//            @RequestParam(required = false) UUID vendorID,
+//            @RequestParam(required = false) Double minPrice,
+//            @RequestParam(required = false) Double maxPrice,
+//            @RequestParam(required = false) String color,
+//            @RequestParam(required = false) String size,
+//            @RequestParam(required = false) String name) {
+//
+//        try {
+//            ProductSingleColorDto products = productService.filterProducts(categoryID, vendorID, minPrice, maxPrice, color, size, name);
+//            return ResponseEntity.ok(new Response("Filtered products retrieved successfully", products, false));
+//        } catch (NoProductFoundException e) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                    .body(new Response(e.getMessage(), null, true));
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(new Response("An error occurred", e.getMessage(), true));
+//        }
+//    }
 
     @GetMapping("/name/{name}")
     public ResponseEntity<Response> getProductByName(@PathVariable String name) {
@@ -127,16 +129,4 @@ public class ProductController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
         }
     }
-    @GetMapping("/image-urls/{name}/{color}")
-    public ResponseEntity<Response> getImageURLsByNameAndColor(@PathVariable String name, @PathVariable String color) {
-        try {
-            List<String> imageURLs = productService.getImageURLsByNameAndColor(name, color);
-            return ResponseEntity.ok(new Response("Image URLs retrieved successfully", imageURLs, false));
-        } catch (NoProductFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(e.getMessage(), null, true));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response("An error occurred", e.getMessage(), true));
-        }
-    }
-
 }

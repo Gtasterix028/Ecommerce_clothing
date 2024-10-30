@@ -3,6 +3,7 @@ package com.gtasterix.E_Commerce.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,37 +12,28 @@ import java.util.UUID;
 @Data
 public class Product {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID productID;
 
-    @Column(nullable = false)
     private String productName;
 
     private String description;
 
-    @Column(nullable = false)
-    private Double price;
+    private Double basePrice; // Base price for the product
 
-    @Column(nullable = false)
-    private Integer stockQuantity;
-
-    @Column(nullable = false)
-    private String color;
-
-    @Column(nullable = false)
-    private String size;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "categoryID", nullable = false)
+    @ManyToOne(fetch= FetchType.EAGER)
+    @JoinColumn(name = "category_id")
     private Category category;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "vendorID", nullable = false)
+    @ManyToOne(fetch= FetchType.EAGER)
+    @JoinColumn(name = "vendor_id")
     private Vendor vendor;
 
-    @ElementCollection@CollectionTable(name = "product_images",
-            joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "image_url", length=2048)
-    private List<String> imageURLs;
+//    @ElementCollection
+//    @CollectionTable(name = "product_image", joinColumns = @JoinColumn(name = "product_id"))
+//    @Column(name = "image_url",length = 2048)
+//    private List<String> imageURLs = new ArrayList<>();
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Variant> variants = new ArrayList<>();
 }

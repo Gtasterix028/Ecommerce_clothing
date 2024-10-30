@@ -1,15 +1,21 @@
 package com.gtasterix.E_Commerce.service;
 
 import com.gtasterix.E_Commerce.dto.ProductDTO;
-import com.gtasterix.E_Commerce.exception.NoProductFoundException;
+import com.gtasterix.E_Commerce.dto.SizeStockDTO;
+import com.gtasterix.E_Commerce.dto.VariantDTO;
 import com.gtasterix.E_Commerce.exception.ProductNotFoundException;
 import com.gtasterix.E_Commerce.exception.ValidationException;
 import com.gtasterix.E_Commerce.mapper.ProductMapper;
+import com.gtasterix.E_Commerce.mapper.SizeStockMapper;
+import com.gtasterix.E_Commerce.mapper.VariantMapper;
 import com.gtasterix.E_Commerce.model.Category;
 import com.gtasterix.E_Commerce.model.Product;
+import com.gtasterix.E_Commerce.model.SizeStock;
+import com.gtasterix.E_Commerce.model.Variant;
 import com.gtasterix.E_Commerce.model.Vendor;
 import com.gtasterix.E_Commerce.repository.CategoryRepository;
 import com.gtasterix.E_Commerce.repository.ProductRepository;
+import com.gtasterix.E_Commerce.repository.VariantRepository;
 import com.gtasterix.E_Commerce.repository.VendorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,22 +37,95 @@ public class ProductService {
     @Autowired
     private VendorRepository vendorRepository;
 
-    public ProductDTO createProduct(ProductDTO productDTO) {
-        Category category = categoryRepository.findById(productDTO.getCategoryID())
-                .orElseThrow(() -> new ValidationException("Category with ID " + productDTO.getCategoryID() + " does not exist"));
-        Vendor vendor = vendorRepository.findById(productDTO.getVendorID())
-                .orElseThrow(() -> new ValidationException("Vendor with ID " + productDTO.getVendorID() + " does not exist"));
+    @Autowired
+    private VariantRepository variantRepository;
 
-        Product product = ProductMapper.toEntity(productDTO, category, vendor);
-        validateProduct(product);
-        Product savedProduct = productRepository.save(product);
-        return ProductMapper.toDTO(savedProduct);
+    public ProductDTO createProduct(ProductDTO productDTO) {
+        validateProductDTO(productDTO);
+
+
+        if (productDTO.getBasePrice()==null) {
+            throw new IllegalArgumentException("Base price is not set for the product");
+        }
+
+        Category category = categoryRepository.findById(productDTO.getCategoryID())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Category ID"));
+        Vendor vendor = vendorRepository.findById(productDTO.getVendorID())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Vendor ID"));
+
+            Product product = ProductMapper.toEntity(productDTO, category, vendor);
+        product.setBasePrice(productDTO.getBasePrice()); // Set basePrice
+        productRepository.save(product);
+
+        if (productDTO.getVariants() != null) {
+            for (VariantDTO variantDTO : productDTO.getVariants()) {
+                createVariant(product.getProductID(), variantDTO);
+            }
+        }
+
+        return ProductMapper.toDTO(product);
     }
 
+
     public ProductDTO getProductById(UUID id) {
+        return productRepository.findById(id)
+                .map(ProductMapper::toDTO)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with ID: " + id));
+    }
+
+    public ProductDTO updateProduct(UUID id, ProductDTO productDTO) {
+        validateProductDTO(productDTO);
+
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ProductNotFoundException("Product with ID " + id + " not found"));
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with ID: " + id));
+
+        Category category = categoryRepository.findById(productDTO.getCategoryID())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Category ID"));
+        Vendor vendor = vendorRepository.findById(productDTO.getVendorID())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Vendor ID"));
+
+        product.setProductName(productDTO.getProductName());
+        product.setDescription(productDTO.getDescription());
+        product.setCategory(category);
+        product.setVendor(vendor);
+
+        saveVariants(product, productDTO.getVariants());
+        productRepository.save(product);
+
         return ProductMapper.toDTO(product);
+    }
+
+    public ProductDTO patchProductById(UUID id, ProductDTO productDTO) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with ID: " + id));
+
+        if (productDTO.getProductName() != null) {
+            product.setProductName(productDTO.getProductName());
+        }
+        if (productDTO.getDescription() != null) {
+            product.setDescription(productDTO.getDescription());
+        }
+        if (productDTO.getCategoryID() != null) {
+            Category category = categoryRepository.findById(productDTO.getCategoryID())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid Category ID"));
+            product.setCategory(category);
+        }
+        if (productDTO.getVendorID() != null) {
+            Vendor vendor = vendorRepository.findById(productDTO.getVendorID())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid Vendor ID"));
+            product.setVendor(vendor);
+        }
+
+        saveVariants(product, productDTO.getVariants());
+        productRepository.save(product);
+
+        return ProductMapper.toDTO(product);
+    }
+
+    public void deleteProductById(UUID id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with ID: " + id));
+        productRepository.delete(product);
     }
 
     public List<ProductDTO> getAllProducts() {
@@ -55,119 +134,116 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
-    public ProductDTO updateProduct(UUID id, ProductDTO productDTO) {
-        if (!productRepository.existsById(id)) {
-            throw new ProductNotFoundException("Product with ID " + id + " not found");
-        }
-
-        Category category = categoryRepository.findById(productDTO.getCategoryID())
-                .orElseThrow(() -> new ValidationException("Category with ID " + productDTO.getCategoryID() + " does not exist"));
-        Vendor vendor = vendorRepository.findById(productDTO.getVendorID())
-                .orElseThrow(() -> new ValidationException("Vendor with ID " + productDTO.getVendorID() + " does not exist"));
-
-        Product product = ProductMapper.toEntity(productDTO, category, vendor);
-        product.setProductID(id);
-        validateProduct(product);
-        Product updatedProduct = productRepository.save(product);
-        return ProductMapper.toDTO(updatedProduct);
-    }
-
-    public ProductDTO patchProductById(UUID id, ProductDTO productDTO) {
-        Product existingProduct = productRepository.findById(id)
-                .orElseThrow(() -> new ProductNotFoundException("Product with ID " + id + " not found"));
-
-        if (productDTO.getProductName() != null) existingProduct.setProductName(productDTO.getProductName());
-        if (productDTO.getDescription() != null) existingProduct.setDescription(productDTO.getDescription());
-        if (productDTO.getPrice() != null) {
-            if (productDTO.getPrice() <= 0) {
-                throw new ValidationException("Product price must be greater than zero");
-            }
-            existingProduct.setPrice(productDTO.getPrice());
-        }
-        if (productDTO.getStockQuantity() != null) {
-            if (productDTO.getStockQuantity() < 0) {
-                throw new ValidationException("Product stock quantity cannot be negative");
-            }
-            existingProduct.setStockQuantity(productDTO.getStockQuantity());
-        }
-        if (productDTO.getColor() != null) existingProduct.setColor(productDTO.getColor());
-        if (productDTO.getSize() != null) existingProduct.setSize(productDTO.getSize());
-        if (productDTO.getCategoryID() != null) {
-            Category category = categoryRepository.findById(productDTO.getCategoryID())
-                    .orElseThrow(() -> new ValidationException("Category with ID " + productDTO.getCategoryID() + " does not exist"));
-            existingProduct.setCategory(category);
-        }
-        if (productDTO.getVendorID() != null) {
-            Vendor vendor = vendorRepository.findById(productDTO.getVendorID())
-                    .orElseThrow(() -> new ValidationException("Vendor with ID " + productDTO.getVendorID() + " does not exist"));
-            existingProduct.setVendor(vendor);
-        }
-        if (productDTO.getImageURLs() != null) existingProduct.setImageURLs(productDTO.getImageURLs());
-
-        Product updatedProduct = productRepository.save(existingProduct);
-        return ProductMapper.toDTO(updatedProduct);
-    }
-
-    public void deleteProductById(UUID productId) {
-        Product existingProduct = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException("Product with ID " + productId + " not found"));
-
-        productRepository.delete(existingProduct);
-    }
-
-    private void validateProduct(Product product) {
-        if (product.getProductName() == null || product.getProductName().isEmpty()) {
-            throw new ValidationException("Product name cannot be null or empty");
-        }
-        if (product.getPrice() == null || product.getPrice() <= 0) {
-            throw new ValidationException("Product price must be greater than zero");
-        }
-        if (product.getStockQuantity() == null || product.getStockQuantity() < 0) {
-            throw new ValidationException("Product stock quantity cannot be negative");
-        }
-    }
-
-
-    public List<ProductDTO> filterProducts(UUID categoryID, UUID vendorID, Double minPrice, Double maxPrice, String color, String size, String name) {
-        List<Product> filteredProducts = productRepository.filterProducts(categoryID, vendorID, minPrice, maxPrice, color, size, name);
-        if (filteredProducts.isEmpty()) {
-            throw new NoProductFoundException("No products match the filter criteria");
-        }
-        return
-                filteredProducts.stream().map(ProductMapper::toDTO).collect(Collectors.toList());
-    }
-
     public ProductDTO getProductByName(String name) {
-        Product product = productRepository.findByProductName(name)
-                .orElseThrow(() -> new ProductNotFoundException("Product with name " + name + " not found"));
-        return ProductMapper.toDTO(product);
+        return productRepository.findByProductName(name)
+                .map(ProductMapper::toDTO)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with name: " + name));
+    }
+
+//    public Variant createVariant(UUID productId, VariantDTO variantDTO) {
+//        Product product = productRepository.findById(productId)
+//                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+//
+//        // Ensure the base price is set before calculating the variant price
+//        if (product.getBasePrice() == null) {
+//            throw new ValidationException("Base price is not set for the product");
+//        }
+//
+//        Variant variant = VariantMapper.toEntity(variantDTO, product);
+//
+//        if (variantDTO.getSizeStockList().isEmpty()) {
+//            throw new ValidationException("SizeStock list cannot be empty");
+//        }
+//
+//        // Validate SizeStock entities
+//        for (SizeStockDTO sizeStockDTO : variantDTO.getSizeStockList()) {
+//            if (sizeStockDTO.getSize() == null || sizeStockDTO.getStockQuantity() == null) {
+//                throw new ValidationException("Invalid SizeStock entity");
+//            }
+//        }
+//
+//        // Calculate variant price based on base price and discount
+//        variant.setPrice(variant.calculatePrice()); // Pass discount to calculatePrice
+//
+//        // Save the variant and associate SizeStock
+//        Variant savedVariant = variantRepository.save(variant);
+//        List<SizeStock> sizeStocks = createSizeStocks(variantDTO.getSizeStockList(), savedVariant);
+//        savedVariant.setSizeStockList(sizeStocks);
+//        return variantRepository.save(savedVariant);
+//    }
+
+    public Variant createVariant(UUID productId, VariantDTO variantDTO) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+
+        // Ensure the base price is set before calculating the variant price
+        if (product.getBasePrice() == null) {
+            throw new ValidationException("Base price is not set for the product");
+        }
+
+        Variant variant = VariantMapper.toEntity(variantDTO, product);
+
+        if (variantDTO.getSizeStockList().isEmpty()) {
+            throw new ValidationException("SizeStock list cannot be empty");
+        }
+
+        // Validate SizeStock entities
+        for (SizeStockDTO sizeStockDTO : variantDTO.getSizeStockList()) {
+            if (sizeStockDTO.getSize() == null || sizeStockDTO.getStockQuantity() == null) {
+                throw new ValidationException("Invalid SizeStock entity");
+            }
+        }
+
+        // Save the variant and associate SizeStock
+        Variant savedVariant = variantRepository.save(variant);
+        List<SizeStock> sizeStocks = createSizeStocks(variantDTO.getSizeStockList(), savedVariant);
+        savedVariant.setSizeStockList(sizeStocks);
+
+        // Calculate variant price based on base price and discount after saving the variant
+        savedVariant.setPrice(savedVariant.calculatePrice());
+
+        return variantRepository.save(savedVariant);
+    }
+
+    private List<SizeStock> createSizeStocks(List<SizeStockDTO> sizeStockDTOs, Variant variant) {
+        List<SizeStock> sizeStocks = new ArrayList<>();
+
+        if (sizeStockDTOs == null || sizeStockDTOs.isEmpty()) {
+            throw new ValidationException("SizeStock list cannot be null or empty");
+        }
+
+        for (SizeStockDTO sizeStockDTO : sizeStockDTOs) {
+            SizeStock sizeStock = new SizeStock(sizeStockDTO.getSize(), sizeStockDTO.getStockQuantity());
+            sizeStock.setVariant(variant); // Set the variant reference
+            sizeStocks.add(sizeStock); // Add the new SizeStock
+        }
+
+        return sizeStocks;
+    }
+
+    private void saveVariants(Product product, List<VariantDTO> variantDTOs) {
+        if (variantDTOs != null) {
+            for (VariantDTO variantDTO : variantDTOs) {
+                Variant variant = VariantMapper.toEntity(variantDTO, product);
+                // Clear existing sizeStockList to avoid orphan issues
+                variant.setSizeStockList(new ArrayList<>());
+                // Add new SizeStock entities
+                for (SizeStockDTO sizeStockDTO : variantDTO.getSizeStockList()) {
+                    SizeStock sizeStock = SizeStockMapper.toEntity(sizeStockDTO, variant);
+                    variant.addSizeStock(sizeStock); // Use the add method
+                }
+                variantRepository.save(variant);
+            }
+        }
     }
 
 
-    public List<String> getImageURLsByNameAndColor(String productName, String color) {
-        List<Product> products = productRepository.findByProductNameAndColor(productName, color);
-
-        if (products.isEmpty()) {
-            throw new NoProductFoundException("No products match the provided name and color");
+    private void validateProductDTO(ProductDTO productDTO) {
+        if (productDTO.getBasePrice() == null) {
+            throw new IllegalArgumentException("Base price is not set for the product");
         }
-
-
-        List<ProductDTO> productDTOs = new ArrayList<>();
-        for (Product product : products) {
-            ProductDTO productDTO = ProductMapper.toDTO(product);
-            productDTOs.add(productDTO);
+        if (productDTO.getProductName() == null || productDTO.getProductName().isEmpty()) {
+            throw new IllegalArgumentException("Product name cannot be empty");
         }
-
-
-        List<String> imageURLs = new ArrayList<>();
-        for (ProductDTO productDTO : productDTOs) {
-            imageURLs.addAll(productDTO.getImageURLs());
-        }
-
-        return imageURLs;
     }
-
-
-
-
 }
